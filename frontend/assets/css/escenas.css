@@ -1,0 +1,410 @@
+/* ════════════════════════════════════════════════════════════════════════
+   escenas.css – La interfaz cambia según el tipo de archivo con el que se habla.
+
+   Cada escena es el taller real de ese medio:
+     • PDF    → Imprenta        (tema-imprenta.css: papel, tintas CMYK, sombras duras)
+     • Video  → Moviola         (sala de montaje: base de película, perforaciones, ámbar de proyector)
+     • Imagen → Mesa de luz     (marcos de diapositiva, cuadrícula, lápiz graso, lupa)
+     • Audio  → Estudio de radio(baquelita verde, dial con aguja, vúmetro)
+     • Toda la base → collage: cada panel en su propia escena.
+
+   Funciona redefiniendo las variables de color/tipografía del tema en:
+     body[data-scene=…]  (modo "Este archivo": toda la app)
+     .viewer[data-kind=…] (el visor según el archivo abierto, también en "Toda la base")
+     body[data-scene=kb] .chat-panel (el chat del collage = estudio de radio)
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── Paletas ─────────────────────────────────────────────────────────── */
+.scene-curtain[data-to="pdf"], .scene-curtain[data-to="kb"] {
+    --paper: #DCE1DA; --paper-2: #C9D0C7; --sheet: #F6F7F2; --ink: #1B1D52;
+    --mag: #E5007D; --mag-ink: #B8005F; --cyan: #009FE3; --cyan-ink: #00699A; --yel: #FFE500;
+    --display: 'Big Shoulders Display', 'Arial Narrow', sans-serif; --serif: 'Spectral', Georgia, serif;
+}
+
+/* Moviola */
+body[data-scene="video"], .viewer[data-kind="video"], .scene-curtain[data-to="video"] {
+    --paper: #1E130C; --paper-2: #2A1B11; --sheet: #2B1D13; --ink: #F4E6C8;
+    --mag: #F0A830; --mag-ink: #F6BF5C; --cyan: #E0322B; --cyan-ink: #FF7B6E; --yel: #5C2A10;
+    --display: 'Big Shoulders Stencil Display', 'Big Shoulders Display', sans-serif;
+    --serif: 'Courier Prime', 'Courier New', monospace;
+    --zinc-950: #1E130C; --zinc-900: #2B1D13; --zinc-850: #261910; --zinc-800: #5E4632; --zinc-700: #7A6048;
+    --zinc-600: #9C8366; --zinc-500: #C3AC8A; --zinc-400: #D6C29F; --zinc-300: #E3D1AF; --zinc-200: #EEDDBC; --zinc-100: #F4E6C8;
+    --emerald-400: #F6BF5C; --emerald-500: #F0A830; --emerald-600: #C98418; --emerald-900: #3A2410;
+    --indigo-400: #FF7B6E; --indigo-500: #E0322B; --indigo-600: #B5241F; --cyan-400: #FF7B6E; --cyan-500: #E0322B;
+    --amber-400: #F6BF5C; --amber-500: #F0A830; --red-400: #FF6B5E; --red-500: #E0322B;
+    --film: #120A06;
+}
+
+/* Estudio de radio */
+body[data-scene="audio"], .viewer[data-kind="audio"], body[data-scene="kb"] .chat-panel, .scene-curtain[data-to="audio"] {
+    --paper: #10231C; --paper-2: #183128; --sheet: #183027; --ink: #F2EAD3;
+    --mag: #FF8A3D; --mag-ink: #FFA463; --cyan: #FFC857; --cyan-ink: #FFD27A; --yel: #2E5546;
+    --display: 'Unbounded', 'Arial Black', sans-serif; --serif: 'Spectral', Georgia, serif;
+    --zinc-950: #10231C; --zinc-900: #183027; --zinc-850: #142A22; --zinc-800: #3E6555; --zinc-700: #557B6A;
+    --zinc-600: #7E9D8F; --zinc-500: #AFC4B8; --zinc-400: #C9D8CE; --zinc-300: #DDE6DC; --zinc-200: #E9EEE3; --zinc-100: #F2EAD3;
+    --emerald-400: #FFA463; --emerald-500: #FF8A3D; --emerald-600: #E06A1F; --emerald-900: #3A2A14;
+    --indigo-400: #FFD27A; --indigo-500: #FFC857; --indigo-600: #E0A93A; --cyan-400: #FFD27A; --cyan-500: #FFC857;
+    --amber-400: #FFD27A; --amber-500: #FFC857; --red-400: #FF7A6B; --red-500: #E4572E;
+    --glass: #0B1A15;
+}
+
+/* Mesa de luz */
+body[data-scene="image"], .viewer[data-kind="image"], .scene-curtain[data-to="image"] {
+    --paper: #E8EEF3; --paper-2: #D5DEE6; --sheet: #FBFDFF; --ink: #16181D;
+    --mag: #D7263D; --mag-ink: #B01C30; --cyan: #2B3BD6; --cyan-ink: #2330B0; --yel: #FFF1A1;
+    --display: 'Bricolage Grotesque', 'Arial', sans-serif; --serif: 'Bricolage Grotesque', 'Arial', sans-serif;
+    --zinc-950: #E8EEF3; --zinc-900: #FBFDFF; --zinc-850: #F2F6F9; --zinc-800: #B9C4CE; --zinc-700: #93A0AC;
+    --zinc-600: #6C7884; --zinc-500: #4C5661; --zinc-400: #39414B; --zinc-300: #2B323A; --zinc-200: #20262D; --zinc-100: #16181D;
+    --emerald-400: #B01C30; --emerald-500: #D7263D; --emerald-600: #B01C30; --emerald-900: #FAD4DA;
+    --indigo-400: #2330B0; --indigo-500: #2B3BD6; --indigo-600: #2330B0; --cyan-400: #2330B0; --cyan-500: #2B3BD6;
+    --amber-400: #8A6A00; --amber-500: #FFE14D; --red-400: #C41E30; --red-500: #D7263D;
+    --mount: #E6E2D8;
+}
+
+/* Los paneles que cambian de escena dentro del collage vuelven a leer sus variables */
+.viewer[data-kind="video"], .viewer[data-kind="audio"], .viewer[data-kind="image"], body[data-scene="kb"] .chat-panel {
+    color: var(--ink); font-family: var(--serif);
+}
+body[data-scene] { transition: background-color .3s ease; }
+
+/* ════════════════════════ Formas por escena ════════════════════════ */
+/* Moviola: cuadros de película, filo fino y resplandor de proyector en lugar de sombras de imprenta */
+:is(body[data-scene="video"], .viewer[data-kind="video"]) :is(.msg-bubble, .chip, .stat-card, .summary-card, .wf-card, .mermaid, #doc-chunks-list > div, .chat-input-wrapper, .upload-zone, .toolbar-group) {
+    border-radius: 3px !important; border-width: 1px !important; border-color: var(--zinc-800) !important;
+    box-shadow: inset 0 0 0 1px rgba(255, 236, 200, .03) !important;
+}
+:is(body[data-scene="video"], .viewer[data-kind="video"]) :is(.vtab-btn.active, .doc-item.active, .source-tag, .concept-tag) {
+    border-radius: 3px !important; box-shadow: 0 0 18px rgba(240, 168, 48, .28) !important; border-color: var(--mag) !important;
+}
+body[data-scene="video"] .msg-assistant .msg-bubble { border-left: 3px solid var(--mag) !important; }
+body[data-scene="video"] .msg-user .msg-bubble { background: var(--zinc-800) !important; color: var(--ink) !important; border-color: var(--zinc-700) !important; }
+body[data-scene="video"]::after {   /* grano de película en vez de grano de papel */
+    background-image: radial-gradient(rgba(255, 240, 210, .05) 1px, transparent 1px) !important;
+    background-size: 3px 3px; mix-blend-mode: screen !important;
+}
+body[data-scene="video"] .slug-rail { background: var(--film) !important; border-right-color: var(--mag) !important; }
+body[data-scene="video"] .slug-rail span { color: var(--mag) !important; }
+
+/* Estudio de radio: perillas de baquelita, todo redondeado y con relieve */
+:is(body[data-scene="audio"], .viewer[data-kind="audio"], body[data-scene="kb"] .chat-panel) :is(.msg-bubble, .chip, .stat-card, .summary-card, .wf-card, .mermaid, #doc-chunks-list > div, .chat-input-wrapper, .upload-zone, .source-tag, .concept-tag, .toolbar-group, .vtab-btn.active, .doc-item.active) {
+    border-radius: 18px !important; border-width: 1px !important; border-color: var(--zinc-800) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 3px 0 rgba(0, 0, 0, .35) !important;
+}
+:is(body[data-scene="audio"], body[data-scene="kb"] .chat-panel) .msg-user .msg-bubble { background: var(--yel) !important; color: var(--ink) !important; }
+:is(body[data-scene="audio"], body[data-scene="kb"] .chat-panel) :is(.btn-send, .msg-avatar, .chat-header-icon) { border-radius: 50% !important; }
+:is(body[data-scene="audio"], body[data-scene="kb"] .chat-panel) .chip:hover { background: var(--yel) !important; }
+body[data-scene="audio"]::after { background-image: none !important; }
+body[data-scene="audio"] .slug-rail { background: var(--glass) !important; }
+body[data-scene="audio"] .slug-rail span { color: var(--cyan) !important; }
+
+/* Mesa de luz: diapositivas montadas, esquinas redondeadas y sombra suave sobre vidrio iluminado */
+:is(body[data-scene="image"], .viewer[data-kind="image"]) :is(.msg-bubble, .chip, .stat-card, .summary-card, .wf-card, .mermaid, #doc-chunks-list > div, .chat-input-wrapper, .upload-zone, .source-tag, .concept-tag, .toolbar-group, .vtab-btn.active, .doc-item.active) {
+    border-radius: 10px !important; border-width: 1px !important; border-color: var(--zinc-800) !important;
+    box-shadow: 0 1px 0 #fff inset, 0 6px 18px rgba(22, 24, 29, .10) !important;
+}
+:is(body[data-scene="image"], .viewer[data-kind="image"]) :is(.vtab-btn.active, .doc-item.active) { border-color: var(--cyan) !important; background: #fff !important; }
+body[data-scene="image"] .msg-user .msg-bubble { background: var(--cyan) !important; color: #fff !important; border-color: var(--cyan) !important; }
+body[data-scene="image"]::after { background-image: none !important; }
+body[data-scene="image"] {
+    background:
+        radial-gradient(ellipse at 50% 35%, rgba(255, 255, 255, .9), rgba(255, 255, 255, 0) 65%),
+        linear-gradient(rgba(43, 59, 214, .06) 1px, transparent 1px) 0 0 / 28px 28px,
+        linear-gradient(90deg, rgba(43, 59, 214, .06) 1px, transparent 1px) 0 0 / 28px 28px,
+        var(--paper) !important;
+}
+body[data-scene="image"] .slug-rail { background: var(--sheet) !important; }
+
+/* Hover/reproducción de la transcripción sin colores de papel en las escenas oscuras */
+:is(.viewer[data-kind="video"], .viewer[data-kind="audio"]) .tr-line:hover { background: var(--paper-2) !important; }
+:is(.viewer[data-kind="video"], .viewer[data-kind="audio"]) .tr-line.playing { background: var(--yel) !important; }
+
+/* ════════════════════════ Visor por tipo de archivo ════════════════════════ */
+/* Moviola: perforaciones de película a los lados del visor */
+.viewer[data-kind="video"] { background: var(--paper) !important; }
+.viewer[data-kind="video"] .viewer-toolbar, .viewer[data-kind="video"] .viewer-tabs { background: var(--film) !important; border-color: var(--zinc-800) !important; }
+.viewer[data-kind="video"]::before, .viewer[data-kind="video"]::after {
+    content: ""; position: absolute; top: 0; bottom: 0; width: 18px; z-index: 3; pointer-events: none;
+    background-color: var(--film);
+    background-image: repeating-linear-gradient(to bottom, transparent 0 9px, rgba(244, 230, 200, .78) 9px 19px, transparent 19px 28px);
+    background-size: 8px 100%; background-repeat: no-repeat; background-position: center;
+}
+.viewer[data-kind="video"]::before { left: 0; }
+.viewer[data-kind="video"]::after { right: 0; }
+.viewer[data-kind="video"] .viewer-document { padding-left: 36px !important; padding-right: 36px !important; }
+.viewer[data-kind="video"] .media-player {
+    position: relative; background: #000 !important; border: 0 !important; padding: 0 !important;
+    border-radius: 22px / 16px; overflow: hidden;
+    box-shadow: 0 0 0 6px var(--film), 0 0 0 7px var(--zinc-800), 0 0 70px rgba(240, 168, 48, .22) !important;
+}
+.viewer[data-kind="video"] .media-player video { max-height: 56vh; }
+.viewer[data-kind="video"] .media-player::before {   /* claqueta */
+    content: ""; display: block; height: 12px;
+    background: repeating-linear-gradient(-45deg, var(--ink) 0 14px, #000 14px 28px);
+}
+.viewer[data-kind="video"] .tr-time { font-family: 'Courier Prime', monospace; color: var(--mag); letter-spacing: .02em; }
+.viewer[data-kind="video"] .media-transcript-title { font-family: var(--display); letter-spacing: .04em; }
+
+/* Estudio de radio: frente del aparato con rejilla y vúmetro */
+.viewer[data-kind="audio"] { background: var(--paper) !important; }
+.viewer[data-kind="audio"] .viewer-toolbar, .viewer[data-kind="audio"] .viewer-tabs { background: var(--glass) !important; border-color: var(--zinc-800) !important; }
+.viewer[data-kind="audio"] .media-player {
+    background-color: var(--sheet) !important; border: 1px solid var(--zinc-800) !important; border-radius: 26px !important;
+    background-image: radial-gradient(rgba(0, 0, 0, .35) 1.4px, transparent 1.6px) !important; background-size: 9px 9px !important;
+    box-shadow: inset 0 2px 0 rgba(255, 255, 255, .06), 0 8px 0 rgba(0, 0, 0, .35) !important; padding: 18px !important;
+}
+.media-player .eq {
+    display: block; width: 100%; height: 130px; margin-bottom: 14px; border-radius: 14px;
+    background: var(--glass); box-shadow: inset 0 0 0 1px var(--zinc-800), inset 0 0 40px rgba(255, 200, 87, .08);
+}
+.viewer[data-kind="audio"] .media-player audio { width: 100%; filter: sepia(.4) hue-rotate(60deg); }
+.viewer[data-kind="audio"] .tr-time { color: var(--cyan); }
+
+/* Mesa de luz: marco de diapositiva y lupa */
+.viewer[data-kind="image"] {
+    background:
+        radial-gradient(ellipse at 50% 40%, rgba(255, 255, 255, .95), rgba(255, 255, 255, 0) 62%),
+        linear-gradient(rgba(43, 59, 214, .07) 1px, transparent 1px) 0 0 / 32px 32px,
+        linear-gradient(90deg, rgba(43, 59, 214, .07) 1px, transparent 1px) 0 0 / 32px 32px,
+        var(--paper) !important;
+}
+.viewer[data-kind="image"] .viewer-toolbar, .viewer[data-kind="image"] .viewer-tabs { background: rgba(251, 253, 255, .82) !important; border-color: var(--zinc-800) !important; backdrop-filter: blur(6px); }
+.media-stage.is-image .media-player {
+    background: var(--mount, #E6E2D8) !important; border: 0 !important; border-radius: 16px !important;
+    padding: 26px 26px 46px !important; width: fit-content; max-width: 100%; margin: 0 auto;
+    box-shadow: inset 0 1px 0 #fff, inset 0 -2px 0 rgba(0, 0, 0, .06), 0 20px 44px rgba(22, 24, 29, .18) !important;
+}
+.img-sheet { position: relative; display: block; cursor: crosshair; }
+.img-sheet img { display: block; max-width: 100%; max-height: 62vh; border-radius: 6px; box-shadow: 0 0 0 1px rgba(0, 0, 0, .18); }
+.img-sheet::after {        /* nombre escrito en el marco, como en una diapositiva */
+    content: attr(data-name); position: absolute; left: 0; right: 0; bottom: -34px; text-align: center;
+    font-family: 'Bricolage Grotesque', sans-serif; font-weight: 600; font-size: .8rem; color: var(--zinc-600);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.loupe {
+    position: absolute; width: 170px; height: 170px; border-radius: 50%; pointer-events: none; z-index: 5;
+    border: 4px solid #16181D; background-repeat: no-repeat; background-color: #fff;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, .8), 0 14px 30px rgba(0, 0, 0, .35);
+    opacity: 0; transform: scale(.6); transition: opacity .15s, transform .15s;
+}
+.loupe.on { opacity: 1; transform: scale(1); }
+@media (hover: none) { .loupe { display: none; } }
+
+/* ════════════════════════ Chunks de marcado ════════════════════════ */
+.pdf-sheet { position: relative; display: inline-block; line-height: 0; }
+.mk-layer { position: absolute; inset: 0; pointer-events: none; z-index: 4; }
+.mk-layer i { position: absolute; display: block; }
+
+/* Párrafo usado: trazo de resaltador (imprenta) */
+.mk-box {
+    background: var(--yel, #FFE500); mix-blend-mode: multiply; opacity: .62; border-radius: 2px;
+    transform-origin: left center; animation: mkSweep .38s cubic-bezier(.3, .7, .3, 1) both;
+    animation-delay: calc(var(--i, 0) * 45ms);
+}
+/* Palabras clave: subrayado de tinta magenta */
+.mk-key {
+    border-bottom: 3px solid var(--mag, #E5007D); background: color-mix(in srgb, var(--mag, #E5007D) 16%, transparent);
+    transform-origin: left center; animation: mkSweep .3s ease-out both;
+    animation-delay: calc(var(--i, 0) * 45ms + 120ms);
+}
+@keyframes mkSweep { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* En la mesa de luz: círculos de lápiz graso alrededor del texto encontrado */
+.img-sheet .mk-box { background: color-mix(in srgb, var(--cyan, #2B3BD6) 22%, transparent); mix-blend-mode: normal; opacity: 1; }
+.mk-ring {
+    box-sizing: content-box; padding: 7px 12px; margin: -10px -15px;
+    border: 3px solid var(--mag, #D7263D); border-radius: 50%; rotate: -2deg;
+    animation: mkDraw .5s ease-out both; animation-delay: calc(var(--i, 0) * 110ms);
+}
+.mk-ring::after {
+    content: ""; position: absolute; inset: -3px -6px; border: 2px solid var(--mag, #D7263D); border-radius: 50%;
+    opacity: .45; rotate: 4deg;
+}
+@keyframes mkDraw { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+.mk-frame {
+    inset: -8px; border: 3px dashed var(--cyan, #2B3BD6); border-radius: 10px; animation: mkFade .4s ease-out both;
+}
+.mk-frame span {
+    position: absolute; top: -14px; right: 18px; padding: 3px 10px; background: var(--yel, #FFF1A1); color: #16181D;
+    font: 600 .72rem/1.3 'Bricolage Grotesque', sans-serif; rotate: 2deg; box-shadow: 0 3px 8px rgba(0, 0, 0, .15); white-space: nowrap;
+}
+@keyframes mkFade { from { opacity: 0; } to { opacity: 1; } }
+
+/* Fragmentos citados (explorador, transcripción) y palabras marcadas */
+mark.mk-word {
+    background: var(--yel); color: inherit; padding: 0 2px;
+    box-shadow: inset 0 -3px 0 var(--mag); border-radius: 2px;
+}
+#doc-chunks-list > .chunk-card.cited { outline: 3px solid var(--mag); outline-offset: 2px; }
+.tr-line.cited { border: 2px solid var(--mag) !important; box-shadow: 4px 4px 0 var(--mag); }
+.viewer[data-kind="video"] .tr-line.cited { box-shadow: 0 0 22px rgba(240, 168, 48, .35); }
+.viewer[data-kind="audio"] .tr-line.cited { box-shadow: 0 0 0 4px rgba(255, 200, 87, .18); border-radius: 14px !important; }
+
+/* Leyenda del marcado */
+.mark-legend {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 16px; padding: 10px 14px;
+    background: var(--sheet); border: 2px solid var(--ink); color: var(--ink); font-size: .85rem;
+}
+.mark-legend[hidden] { display: none; }
+.mark-legend b { font-family: var(--display); font-size: 1.05rem; }
+.ml-swatch { width: 26px; height: 12px; background: var(--yel); box-shadow: inset 0 -3px 0 var(--mag); }
+.ml-busy { animation: mlBusy 1s ease-in-out infinite alternate; transform-origin: left; }
+@keyframes mlBusy { from { transform: scaleX(.2); } to { transform: scaleX(1); } }
+.ml-where { font-style: italic; color: var(--zinc-500); margin-right: 4px; }
+.ml-term { padding: 1px 8px; border: 1px solid var(--zinc-800); background: var(--paper); font-size: .78rem; }
+.ml-clear {
+    margin-left: auto; padding: 4px 10px; border: 1.5px solid var(--ink); background: transparent; color: var(--ink);
+    font: inherit; font-size: .8rem; cursor: pointer;
+}
+.ml-clear:hover { background: var(--yel); }
+.viewer[data-kind="video"] .mark-legend { border-width: 1px; border-color: var(--zinc-800); border-radius: 3px; }
+.viewer[data-kind="audio"] .mark-legend { border-width: 1px; border-color: var(--zinc-800); border-radius: 18px; }
+.viewer[data-kind="image"] .mark-legend { border-width: 1px; border-color: var(--zinc-800); border-radius: 10px; box-shadow: 0 6px 18px rgba(22, 24, 29, .08); }
+
+/* Línea de tiempo con los tramos citados */
+.media-marks { margin-top: 18px; }
+.media-marks[hidden] { display: none; }
+.mm-track { position: relative; height: 54px; cursor: pointer; border: 2px solid var(--ink); background: var(--sheet); }
+.mm-tick { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--zinc-700); }
+.mm-tick em {
+    position: absolute; bottom: 3px; left: 4px; font-style: normal; font-size: .62rem; color: var(--zinc-500);
+    font-family: var(--serif); white-space: nowrap;
+}
+.mm-tick:last-child em { left: auto; right: 4px; }
+.mm-seg {
+    position: absolute; top: 6px; height: 24px; border: 0; padding: 0; cursor: pointer;
+    background: var(--mag); opacity: .85; animation: mkSweep .35s ease-out both; transform-origin: left;
+}
+.mm-seg:hover, .mm-seg:focus-visible { opacity: 1; outline: 2px solid var(--ink); }
+.mm-head { position: absolute; top: -6px; bottom: -6px; width: 2px; background: var(--ink); pointer-events: none; transition: left .25s linear; }
+.mm-head::before {
+    content: ""; position: absolute; top: -2px; left: -5px; border: 6px solid transparent; border-top-color: var(--ink);
+}
+/* Moviola: tira de película con cuadros */
+.viewer[data-kind="video"] .mm-track {
+    border: 0; border-radius: 3px;
+    background-color: var(--film);
+    background-image:
+        repeating-linear-gradient(90deg, transparent 0 6px, rgba(244, 230, 200, .5) 6px 12px, transparent 12px 18px),
+        repeating-linear-gradient(90deg, rgba(244, 230, 200, .07) 0 46px, transparent 46px 50px);
+    background-size: 18px 5px, 100% 100%; background-repeat: repeat-x, repeat; background-position: 0 3px, 0 0;
+}
+.viewer[data-kind="video"] .mm-tick { background: rgba(244, 230, 200, .14); }
+.viewer[data-kind="video"] .mm-seg { top: 12px; height: 22px; background: var(--mag); box-shadow: 0 0 14px rgba(240, 168, 48, .6); }
+.viewer[data-kind="video"] .mm-head { background: var(--cyan); }
+.viewer[data-kind="video"] .mm-head::before { border-top-color: var(--cyan); }
+/* Estudio de radio: el dial de sintonía; la aguja es el cabezal de reproducción */
+.viewer[data-kind="audio"] .mm-track {
+    height: 64px; border: 1px solid var(--zinc-800); border-radius: 14px; overflow: hidden;
+    background: linear-gradient(180deg, rgba(255, 200, 87, .10), rgba(255, 200, 87, 0) 60%), var(--glass);
+    box-shadow: inset 0 0 30px rgba(255, 200, 87, .12);
+}
+.viewer[data-kind="audio"] .mm-tick { top: 0; bottom: auto; height: 16px; background: var(--cyan); opacity: .7; }
+.viewer[data-kind="audio"] .mm-tick em { bottom: auto; top: 20px; color: var(--cyan); font-family: 'Unbounded', sans-serif; font-size: .55rem; }
+.viewer[data-kind="audio"] .mm-seg { top: auto; bottom: 8px; height: 10px; border-radius: 6px; background: var(--cyan); box-shadow: 0 0 12px rgba(255, 200, 87, .7); }
+.viewer[data-kind="audio"] .mm-head { top: 0; bottom: 0; width: 3px; background: var(--mag); box-shadow: 0 0 10px var(--mag); }
+.viewer[data-kind="audio"] .mm-head::before { display: none; }
+
+/* ════════════════════════ Detalles de cada escena ════════════════════════ */
+/* Moviola: luz roja de grabación en el chat (el único movimiento continuo) */
+body[data-scene="video"] .chat-header-icon { position: relative; background: var(--film) !important; box-shadow: 0 0 0 1px var(--zinc-800) !important; }
+body[data-scene="video"] .chat-header-icon i { color: var(--mag) !important; }
+body[data-scene="video"] .chat-header-icon::after {
+    content: ""; position: absolute; top: -4px; right: -4px; width: 10px; height: 10px; border-radius: 50%;
+    background: var(--cyan); box-shadow: 0 0 10px var(--cyan); animation: rec 1.4s steps(1) infinite;
+}
+@keyframes rec { 50% { opacity: .15; } }
+
+/* Estudio de radio: lámpara "al aire" en el encabezado del chat */
+:is(body[data-scene="audio"], body[data-scene="kb"]) .chat-header { position: relative; }
+:is(body[data-scene="audio"], body[data-scene="kb"]) .chat-header::after {
+    content: "al aire"; position: absolute; top: 6px; right: 10px; padding: 1px 7px; border-radius: 10px;
+    font: 500 .58rem/1.4 'Unbounded', sans-serif; letter-spacing: .06em; color: #2A0F05; background: var(--mag);
+    box-shadow: 0 0 12px rgba(255, 138, 61, .7);
+}
+
+:is(body[data-scene="audio"], body[data-scene="kb"]) .chat-header-icon { background: var(--mag) !important; box-shadow: 0 0 0 3px var(--yel), 0 0 16px rgba(255, 138, 61, .5) !important; }
+:is(body[data-scene="audio"], body[data-scene="kb"]) .chat-header-icon i { color: #2A0F05 !important; }
+
+/* Mesa de luz: el encabezado del chat es una tira de diapositivas */
+body[data-scene="image"] .chat-header-icon { background: var(--cyan) !important; border-radius: 8px !important; box-shadow: 0 4px 12px rgba(43, 59, 214, .3) !important; }
+body[data-scene="image"] .chat-header-icon i { color: #fff !important; }
+
+/* Toda la base: collage. Cinta adhesiva uniendo los paneles de cada taller */
+body[data-scene="kb"] .upload-section, body[data-scene="kb"] .chat-messages { position: relative; }
+body[data-scene="kb"] .upload-section::after, body[data-scene="kb"] .chat-messages::before {
+    content: ""; position: absolute; z-index: 6; width: 110px; height: 26px; pointer-events: none;
+    background: repeating-linear-gradient(90deg, rgba(255, 229, 0, .75) 0 10px, rgba(255, 241, 161, .75) 10px 20px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, .12);
+}
+body[data-scene="kb"] .upload-section::after { top: -10px; right: -48px; rotate: 8deg; }
+body[data-scene="kb"] .chat-messages::before { top: 6px; left: -40px; rotate: -12deg; background: repeating-linear-gradient(90deg, rgba(0, 159, 227, .6) 0 10px, rgba(205, 239, 252, .7) 10px 20px); }
+body[data-scene="kb"] .doc-item[data-kind="video"] .doc-item-icon { background: #2B1D13 !important; }
+body[data-scene="kb"] .doc-item[data-kind="video"] .doc-item-icon i { color: #F0A830 !important; }
+body[data-scene="kb"] .doc-item[data-kind="audio"] .doc-item-icon { background: #183027 !important; border-radius: 50% !important; }
+body[data-scene="kb"] .doc-item[data-kind="audio"] .doc-item-icon i { color: #FFC857 !important; }
+body[data-scene="kb"] .doc-item[data-kind="image"] .doc-item-icon { background: #fff !important; border-radius: 8px !important; box-shadow: 0 0 0 4px #E6E2D8 inset; }
+body[data-scene="kb"] .doc-item[data-kind="image"] .doc-item-icon i { color: #2B3BD6 !important; }
+
+/* ════════════════════════ Cortina al cambiar de escena ════════════════════════ */
+.scene-curtain {
+    position: fixed; inset: 0; z-index: 10000; pointer-events: none; visibility: hidden;
+    display: grid; place-items: center; overflow: hidden;
+    background: var(--paper); color: var(--ink);
+}
+.scene-curtain.run { visibility: visible; animation: curtain .95s cubic-bezier(.75, 0, .25, 1) both; }
+@keyframes curtain {
+    0% { clip-path: inset(0 100% 0 0); }
+    40%, 60% { clip-path: inset(0 0 0 0); }
+    100% { clip-path: inset(0 0 0 100%); }
+}
+.scene-curtain span {
+    position: relative; z-index: 2; font-family: var(--display); font-weight: 900; line-height: .9;
+    font-size: clamp(3rem, 10vw, 9rem); text-align: center; padding: 0 16px;
+}
+.scene-curtain b { position: absolute; inset: 0; z-index: 1; }
+/* Imprenta: barras de control de color CMYK */
+.scene-curtain[data-to="pdf"] b {
+    background: linear-gradient(90deg, #00AEEF 0 25%, #E5007D 25% 50%, #FFE500 50% 75%, #1B1D52 75%) center 78% / 60% 18px no-repeat;
+}
+/* Moviola: cola de película con la cuenta regresiva */
+.scene-curtain[data-to="video"] { background: radial-gradient(circle, #3A2618, #120A06 70%); }
+.scene-curtain[data-to="video"] b {
+    margin: auto; width: min(62vmin, 520px); height: min(62vmin, 520px); border-radius: 50%; inset: 0;
+    border: 3px solid rgba(244, 230, 200, .55);
+    background:
+        linear-gradient(rgba(244, 230, 200, .4), rgba(244, 230, 200, .4)) center / 100% 2px no-repeat,
+        linear-gradient(rgba(244, 230, 200, .4), rgba(244, 230, 200, .4)) center / 2px 100% no-repeat,
+        conic-gradient(rgba(240, 168, 48, .35) 0 var(--sweep, 0deg), transparent 0);
+    animation: leader .95s linear both;
+}
+@property --sweep { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+@keyframes leader { from { --sweep: 0deg; } to { --sweep: 360deg; } }
+/* Mesa de luz: destello del vidrio iluminado */
+.scene-curtain[data-to="image"] { background: radial-gradient(circle, #fff 20%, #E8EEF3 80%); }
+.scene-curtain[data-to="image"] b {
+    background: linear-gradient(rgba(43, 59, 214, .12) 1px, transparent 1px) 0 0 / 40px 40px,
+                linear-gradient(90deg, rgba(43, 59, 214, .12) 1px, transparent 1px) 0 0 / 40px 40px;
+}
+/* Estudio de radio: escala del dial */
+.scene-curtain[data-to="audio"] b {
+    background:
+        repeating-linear-gradient(90deg, rgba(255, 200, 87, .55) 0 2px, transparent 2px 26px) center 72% / 80% 26px no-repeat,
+        linear-gradient(#FF8A3D, #FF8A3D) 55% 66% / 3px 90px no-repeat;
+}
+.scene-curtain[data-to="audio"] span { color: #FFC857; text-shadow: 0 0 30px rgba(255, 200, 87, .45); }
+/* Toda la base: una franja de cada taller */
+.scene-curtain[data-to="kb"] b {
+    background: linear-gradient(90deg, #DCE1DA 0 25%, #1E130C 25% 50%, #E8EEF3 50% 75%, #10231C 75%);
+}
+.scene-curtain[data-to="kb"] span { background: var(--yel); padding: .1em .3em; border: 4px solid #1B1D52; rotate: -2deg; }
+
+@media (prefers-reduced-motion: reduce) {
+    .scene-curtain { display: none; }
+    .mk-box, .mk-key, .mk-ring, .mk-frame, .mm-seg { animation: none !important; }
+    body[data-scene="video"] .chat-header-icon::after { animation: none; }
+}
+@media (max-width: 900px) {
+    .viewer[data-kind="video"]::before, .viewer[data-kind="video"]::after { display: none; }
+    .viewer[data-kind="video"] .viewer-document { padding-left: 16px !important; padding-right: 16px !important; }
+    body[data-scene="kb"] .upload-section::after, body[data-scene="kb"] .chat-messages::before { display: none; }
+}

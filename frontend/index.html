@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Archivo Vivo · Iniciar sesión</title>
+    <meta name="description" content="Archivo Vivo: base de conocimiento con PDFs, audios y videos. Inicia sesión o regístrate.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* ── Reset & Base ──────────────────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        :root {
+            --zinc-950: #09090b;
+            --zinc-900: #18181b;
+            --zinc-800: #27272a;
+            --zinc-700: #3f3f46;
+            --zinc-600: #52525b;
+            --zinc-500: #71717a;
+            --zinc-400: #a1a1aa;
+            --zinc-300: #d4d4d8;
+            --zinc-200: #e4e4e7;
+            --zinc-100: #f4f4f5;
+            --emerald-500: #10b981;
+            --emerald-400: #34d399;
+            --emerald-600: #059669;
+            --emerald-900: #064e3b;
+            --indigo-500: #6366f1;
+            --indigo-400: #818cf8;
+            --indigo-600: #4f46e5;
+            --red-500: #ef4444;
+            --red-400: #f87171;
+            --amber-500: #f59e0b;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--zinc-950);
+            color: var(--zinc-100);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ── Animated Background ───────────────────────────────────────── */
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(16, 185, 129, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(16, 185, 129, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            z-index: 0;
+        }
+
+        .bg-glow {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            filter: blur(150px);
+            opacity: 0.15;
+            z-index: 0;
+            animation: float 8s ease-in-out infinite;
+        }
+        .bg-glow-1 { background: var(--emerald-500); top: -200px; right: -100px; }
+        .bg-glow-2 { background: var(--indigo-500); bottom: -200px; left: -100px; animation-delay: -4s; }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(30px, -30px) scale(1.1); }
+        }
+
+        /* ── Main Container ────────────────────────────────────────────── */
+        .auth-container {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            width: 100%;
+            max-width: 1100px;
+            min-height: 640px;
+            background: rgba(24, 24, 27, 0.7);
+            backdrop-filter: blur(40px);
+            border: 1px solid var(--zinc-800);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 
+                0 0 0 1px rgba(255,255,255,0.03),
+                0 25px 50px -12px rgba(0,0,0,0.5),
+                0 0 100px rgba(16, 185, 129, 0.05);
+            margin: 20px;
+        }
+
+        /* ── Left Panel – Branding ─────────────────────────────────────── */
+        .auth-brand {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 60px;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%);
+            border-right: 1px solid var(--zinc-800);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-brand::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, transparent 70%);
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+        }
+
+        .brand-icon {
+            width: 72px;
+            height: 72px;
+            background: linear-gradient(135deg, var(--emerald-500), var(--indigo-500));
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 28px;
+            box-shadow: 0 8px 32px rgba(16, 185, 129, 0.3);
+            position: relative;
+        }
+
+        .brand-icon i { color: white; }
+
+        .brand-title {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            margin-bottom: 12px;
+        }
+        .brand-title span {
+            background: linear-gradient(135deg, var(--emerald-400), var(--indigo-400));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .brand-subtitle {
+            font-size: 1.05rem;
+            color: var(--zinc-400);
+            line-height: 1.6;
+            margin-bottom: 40px;
+        }
+
+        .feature-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .feature-list li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.9rem;
+            color: var(--zinc-300);
+        }
+        .feature-list li .feat-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .feature-list li .feat-icon i { color: var(--emerald-400); width: 18px; height: 18px; }
+
+        /* ── Right Panel – Form ────────────────────────────────────────── */
+        .auth-form-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 60px;
+        }
+
+        .form-header {
+            margin-bottom: 32px;
+        }
+        .form-header h2 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+        }
+        .form-header p {
+            color: var(--zinc-400);
+            font-size: 0.9rem;
+        }
+
+        /* ── Tab Switcher ──────────────────────────────────────────────── */
+        .tab-switcher {
+            display: flex;
+            background: var(--zinc-900);
+            border: 1px solid var(--zinc-800);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 28px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            background: transparent;
+            color: var(--zinc-400);
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        .tab-btn.active {
+            background: var(--zinc-800);
+            color: var(--zinc-100);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .tab-btn:hover:not(.active) {
+            color: var(--zinc-200);
+        }
+
+        /* ── Input Groups ──────────────────────────────────────────────── */
+        .input-group {
+            margin-bottom: 18px;
+            position: relative;
+        }
+        .input-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--zinc-300);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .input-wrapper {
+            position: relative;
+        }
+        .input-wrapper i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--zinc-500);
+            width: 18px;
+            height: 18px;
+            pointer-events: none;
+            transition: color 0.2s;
+        }
+        .input-wrapper input {
+            width: 100%;
+            padding: 12px 14px 12px 44px;
+            background: var(--zinc-900);
+            border: 1px solid var(--zinc-800);
+            border-radius: 10px;
+            color: var(--zinc-100);
+            font-family: inherit;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+        .input-wrapper input:focus {
+            border-color: var(--emerald-500);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+        .input-wrapper input:focus + i,
+        .input-wrapper input:focus ~ i {
+            color: var(--emerald-400);
+        }
+        .input-wrapper input::placeholder {
+            color: var(--zinc-600);
+        }
+
+        .input-error {
+            font-size: 0.75rem;
+            color: var(--red-400);
+            margin-top: 4px;
+            display: none;
+        }
+        .input-error.visible { display: block; }
+
+        /* ── Password Toggle ───────────────────────────────────────────── */
+        .pw-toggle {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--zinc-500);
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+        }
+        .pw-toggle:hover { color: var(--zinc-300); }
+        .pw-toggle i { width: 18px; height: 18px; pointer-events: none; }
+
+        /* ── Submit Button ─────────────────────────────────────────────── */
+        .btn-submit {
+            width: 100%;
+            padding: 13px 20px;
+            border: none;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--emerald-500), var(--emerald-600));
+            color: white;
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.25);
+        }
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35);
+        }
+        .btn-primary:active { transform: translateY(0); }
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ── Loading Spinner ───────────────────────────────────────────── */
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            display: none;
+        }
+        .btn-submit.loading .spinner { display: block; }
+        .btn-submit.loading .btn-text { display: none; }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Alert Banner ──────────────────────────────────────────────── */
+        .alert-banner {
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 0.82rem;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 18px;
+            animation: slideDown 0.3s ease;
+        }
+        .alert-banner.visible { display: flex; }
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: var(--red-400);
+        }
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: var(--emerald-400);
+        }
+        .alert-banner i { width: 16px; height: 16px; flex-shrink: 0; }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Form Panels ───────────────────────────────────────────────── */
+        .form-panel { display: none; }
+        .form-panel.active { display: block; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Responsive ────────────────────────────────────────────────── */
+        @media (max-width: 860px) {
+            .auth-brand { display: none; }
+            .auth-container { max-width: 480px; min-height: auto; }
+            .auth-form-panel { padding: 40px 30px; }
+        }
+    </style>
+    <!-- Capa visual "prueba de imprenta" (misma estética que la landing). Quitar esta línea devuelve el tema oscuro original. -->
+    <link rel="stylesheet" href="assets/css/tema-imprenta.css">
+</head>
+<body>
+    <div class="slug-rail" aria-hidden="true"><span>Archivo Vivo<i>✂</i>PDFs · audios · videos<i>✂</i>EmbeddingGemma 2 + llama.cpp<i>✂</i>la página o el minuto exacto<i>✂</i>PostgreSQL + pgvector<i>✂</i>Archivo Vivo<i>✂</i>PDFs · audios · videos<i>✂</i>EmbeddingGemma 2 + llama.cpp<i>✂</i>la página o el minuto exacto<i>✂</i>PostgreSQL + pgvector<i>✂</i></span></div>
+    <!-- Animated Background -->
+    <div class="bg-grid"></div>
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
+    <div class="auth-container">
+        <!-- Left Branding Panel -->
+        <div class="auth-brand">
+            <div class="brand-icon">
+                <i data-lucide="brain" style="width:36px;height:36px;"></i>
+            </div>
+            <h1 class="brand-title">Archivo<span>Vivo</span></h1>
+            <p class="brand-subtitle">
+                Una base de conocimiento con PDFs, audios y videos cortos. Pregúntale lo que necesites: cada respuesta te dice de qué archivo, página o minuto salió.
+            </p>
+            <ul class="feature-list">
+                <li>
+                    <div class="feat-icon"><i data-lucide="sparkles"></i></div>
+                    Respuestas generadas con un modelo de Groq
+                </li>
+                <li>
+                    <div class="feat-icon"><i data-lucide="file-search"></i></div>
+                    Fragmentos y vectores guardados en PostgreSQL + pgvector
+                </li>
+                <li>
+                    <div class="feat-icon"><i data-lucide="message-square-text"></i></div>
+                    Chat experto con citas y diagramas automáticos
+                </li>
+                <li>
+                    <div class="feat-icon"><i data-lucide="shield-check"></i></div>
+                    Autenticación segura con JWT y Bcrypt
+                </li>
+            </ul>
+            <a class="auth-back" href="/">Volver al inicio</a>
+        </div>
+
+        <!-- Right Form Panel -->
+        <div class="auth-form-panel">
+            <div class="form-header">
+                <h2 id="form-title">Bienvenido de vuelta</h2>
+                <p id="form-subtitle">Inicia sesión para acceder a tu espacio de trabajo inteligente</p>
+            </div>
+
+            <!-- Tab Switcher -->
+            <div class="tab-switcher">
+                <button class="tab-btn active" id="tab-login" onclick="switchTab('login')">Iniciar Sesión</button>
+                <button class="tab-btn" id="tab-register" onclick="switchTab('register')">Crear Cuenta</button>
+            </div>
+
+            <!-- Alert Banner -->
+            <div class="alert-banner" id="alert-banner">
+                <i data-lucide="alert-circle"></i>
+                <span id="alert-message"></span>
+            </div>
+
+            <!-- Login Form -->
+            <div class="form-panel active" id="panel-login">
+                <form id="login-form" onsubmit="handleLogin(event)">
+                    <div class="input-group">
+                        <label for="login-email">Correo Electrónico</label>
+                        <div class="input-wrapper">
+                            <input type="email" id="login-email" placeholder="tu@email.com" required autocomplete="email">
+                            <i data-lucide="mail"></i>
+                        </div>
+                        <div class="input-error" id="login-email-error"></div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="login-password">Contraseña</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="login-password" placeholder="••••••••" required minlength="6" autocomplete="current-password">
+                            <i data-lucide="lock"></i>
+                            <button type="button" class="pw-toggle" onclick="togglePassword('login-password', this)">
+                                <i data-lucide="eye"></i>
+                            </button>
+                        </div>
+                        <div class="input-error" id="login-password-error"></div>
+                    </div>
+
+                    <button type="submit" class="btn-submit btn-primary" id="btn-login">
+                        <span class="btn-text">Iniciar Sesión</span>
+                        <div class="spinner"></div>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Register Form -->
+            <div class="form-panel" id="panel-register">
+                <form id="register-form" onsubmit="handleRegister(event)">
+                    <div class="input-group">
+                        <label for="reg-fullname">Nombre Completo</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="reg-fullname" placeholder="Tu nombre completo" autocomplete="name">
+                            <i data-lucide="user"></i>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="reg-username">Nombre de Usuario</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="reg-username" placeholder="usuario_genial" required minlength="3" autocomplete="username">
+                            <i data-lucide="at-sign"></i>
+                        </div>
+                        <div class="input-error" id="reg-username-error"></div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="reg-email">Correo Electrónico</label>
+                        <div class="input-wrapper">
+                            <input type="email" id="reg-email" placeholder="tu@email.com" required autocomplete="email">
+                            <i data-lucide="mail"></i>
+                        </div>
+                        <div class="input-error" id="reg-email-error"></div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="reg-password">Contraseña</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="reg-password" placeholder="Mínimo 6 caracteres" required minlength="6" autocomplete="new-password">
+                            <i data-lucide="lock"></i>
+                            <button type="button" class="pw-toggle" onclick="togglePassword('reg-password', this)">
+                                <i data-lucide="eye"></i>
+                            </button>
+                        </div>
+                        <div class="input-error" id="reg-password-error"></div>
+                    </div>
+
+                    <button type="submit" class="btn-submit btn-primary" id="btn-register">
+                        <span class="btn-text">Crear Cuenta</span>
+                        <div class="spinner"></div>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Demo / Quick Access Helper -->
+            <div style="margin-top:24px; padding-top:18px; border-top:1px solid var(--zinc-800); text-align:center;">
+                <p style="font-size:0.75rem; color:var(--zinc-400); margin-bottom:10px; font-weight:500;">
+                    Acceso rápido de prueba para evaluación:
+                </p>
+                <div style="display:flex; gap:8px; justify-content:center;">
+                    <button type="button" onclick="fillDemoCredentials('admin')" style="background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.3); color:var(--indigo-400); padding:6px 12px; border-radius:8px; font-size:0.75rem; cursor:pointer; font-weight:600; display:flex; align-items:center; gap:6px; transition:all 0.2s;" onmouseover="this.style.background='rgba(99,102,241,0.25)'" onmouseout="this.style.background='rgba(99,102,241,0.15)'">
+                        <i data-lucide="shield" style="width:14px;height:14px;"></i> Rol Admin (admin@chatpdf.com)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/auth.js"></script>
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>

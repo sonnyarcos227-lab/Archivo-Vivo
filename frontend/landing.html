@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Archivo Vivo · Pregúntale al archivo</title>
+<meta name="description" content="Una base de conocimiento con PDFs, imágenes, audios y videos cortos. Pregúntale y te responde citando el archivo y la página o el minuto exacto, y te marca de dónde lo sacó.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@700;900&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Unbounded:wght@500;800&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════════
+   Archivo Vivo · Landing "Prueba de imprenta"
+   Semilla de estilo: galeradas de imprenta de los 70 + guillotina de papel.
+   Tintas de proceso (cian, magenta, amarillo) desregistradas sobre papel
+   periódico gris-verde. El PDF es una hoja impresa que se corta en tiras.
+   ════════════════════════════════════════════════════════════════════ */
+:root {
+    --paper:   #DCE1DA;   /* papel periódico gris-verde */
+    --paper-2: #C9D0C7;   /* papel en sombra */
+    --sheet:   #F6F7F2;   /* hoja impresa */
+    --ink:     #1B1D52;   /* tinta índigo de proceso */
+    --mag:     #E5007D;   /* magenta de proceso */
+    --cyan:    #009FE3;   /* cian de proceso */
+    --yel:     #FFE500;   /* amarillo de proceso */
+    --display: 'Big Shoulders Display', 'Arial Narrow', sans-serif;
+    --serif:   'Spectral', Georgia, serif;
+    --gutter:  clamp(16px, 4vw, 56px);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 1.125rem;
+    line-height: 1.6;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+/* grano de papel muy sutil */
+body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 100;
+    background-image: radial-gradient(rgba(27,29,82,.07) 1px, transparent 1px);
+    background-size: 3px 3px;
+    mix-blend-mode: multiply;
+}
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--mag); outline-offset: 4px; }
+
+/* ── Línea de imprenta vertical (slug) en el margen ─────────────────── */
+.slug {
+    position: fixed; top: 0; bottom: 0; left: 0; z-index: 50;
+    width: 34px;
+    display: flex; align-items: center; justify-content: center;
+    border-right: 2px solid var(--ink);
+    background: var(--paper);
+    overflow: hidden;
+}
+.slug span {
+    writing-mode: vertical-rl; transform: rotate(180deg);
+    font-family: var(--display); font-weight: 800; font-size: 0.95rem;
+    letter-spacing: 0.08em; white-space: nowrap;
+    animation: slugRun 40s linear infinite;
+}
+@keyframes slugRun { from { transform: rotate(180deg) translateY(0); } to { transform: rotate(180deg) translateY(-50%); } }
+.slug i { font-style: normal; color: var(--mag); margin: 0 .8em; }
+
+main { margin-left: 34px; }
+
+/* ── Barra superior ─────────────────────────────────────────────────── */
+.top {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 18px var(--gutter);
+}
+.logo {
+    font-family: var(--display); font-weight: 900; font-size: 1.6rem; letter-spacing: .01em;
+    text-decoration: none;
+    text-shadow: 2px 0 var(--mag), -2px 0 var(--cyan);
+}
+.top nav a {
+    font-family: var(--display); font-weight: 800; font-size: 1.15rem;
+    text-decoration: none; padding: 6px 14px;
+    border: 2px solid var(--ink);
+    box-shadow: 4px 4px 0 var(--ink);
+    background: var(--sheet);
+    transition: transform .12s, box-shadow .12s;
+}
+.top nav a:hover { transform: translate(2px,2px); box-shadow: 2px 2px 0 var(--ink); }
+
+/* ── Marcas de corte reutilizables ──────────────────────────────────── */
+.crop { position: absolute; width: 22px; height: 22px; pointer-events: none; }
+.crop::before, .crop::after { content: ""; position: absolute; background: var(--ink); }
+.crop::before { width: 22px; height: 1.5px; top: 10px; }
+.crop::after  { width: 1.5px; height: 22px; left: 10px; }
+.crop.tl { top: -30px; left: -30px; } .crop.tr { top: -30px; right: -30px; }
+.crop.bl { bottom: -30px; left: -30px; } .crop.br { bottom: -30px; right: -30px; }
+.reg { /* marca de registro ⊕ */
+    position: absolute; width: 26px; height: 26px; border: 1.5px solid var(--ink); border-radius: 50%;
+}
+.reg::before, .reg::after { content: ""; position: absolute; background: var(--ink); }
+.reg::before { left: -6px; right: -6px; top: 11px; height: 1.5px; }
+.reg::after  { top: -6px; bottom: -6px; left: 11px; width: 1.5px; }
+
+/* ════════════════════════ HERO ════════════════════════ */
+.hero {
+    position: relative;
+    min-height: calc(100vh - 80px);
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    align-items: center;
+    gap: clamp(24px, 4vw, 64px);
+    padding: 10px var(--gutter) 70px;
+}
+.hero h1 {
+    font-family: var(--display); font-weight: 900;
+    font-size: clamp(4.2rem, 11.5vw, 11rem);
+    line-height: .84; letter-spacing: .035em; text-transform: uppercase;
+    user-select: none;
+}
+.hero h1 .row { display: block; white-space: nowrap; }
+/* letras con tintas desregistradas: el cursor mueve el registro */
+.hero h1 .ch {
+    display: inline-block;
+    color: var(--sheet);
+    -webkit-text-stroke: 3px var(--ink);
+    paint-order: stroke fill;
+    text-shadow:
+        calc(var(--dx, 6px)) calc(var(--dy, 3px)) 0 var(--mag),
+        calc(var(--dx, 6px) * -1) calc(var(--dy, 3px) * -1) 0 var(--cyan);
+    transition: text-shadow .25s ease-out, transform .25s ease-out;
+}
+.hero h1 .ch.sp { width: .28em; }
+.hero h1 .row.solid .ch { color: var(--yel); }
+.hero .lede {
+    max-width: 30rem; margin-top: 30px;
+    font-size: clamp(1.1rem, 1.6vw, 1.3rem);
+}
+.hero .lede em { font-style: italic; }
+.actions { position: relative; z-index: 3; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin-top: 30px; }
+.btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: var(--display); font-weight: 900; font-size: 1.45rem; letter-spacing: .02em;
+    text-decoration: none; cursor: pointer;
+    padding: 14px 26px;
+    background: var(--mag); color: var(--sheet);
+    border: 3px solid var(--ink);
+    box-shadow: 7px 7px 0 var(--ink), 7px 7px 0 3px var(--yel);
+    transition: transform .12s, box-shadow .12s;
+}
+.btn:hover { transform: translate(3px,3px); box-shadow: 4px 4px 0 var(--ink), 4px 4px 0 3px var(--yel); }
+.btn:active { transform: translate(7px,7px); box-shadow: 0 0 0 var(--ink); }
+.hint { font-style: italic; font-size: 1rem; opacity: .85; }
+
+/* ── Pila 3D de 10 hojas (máximo de la app) ─────────────────────────── */
+.stack-wrap {
+    position: relative; justify-self: center;
+    width: min(100%, 400px); aspect-ratio: 210 / 297;
+    perspective: 1400px;
+}
+.stack {
+    position: absolute; inset: 0;
+    transform-style: preserve-3d;
+    transform: rotateX(var(--rx, 14deg)) rotateY(var(--ry, -22deg)) rotateZ(4deg);
+    transition: transform .5s cubic-bezier(.2,.8,.2,1);
+    cursor: pointer;
+}
+.sheet {
+    position: absolute; inset: 0;
+    transform-style: preserve-3d;
+    transform: translateZ(calc(var(--i) * var(--gap, 7px)));
+    transition: transform .6s cubic-bezier(.2,.8,.2,1);
+}
+.stack:hover .sheet, .stack.cut .sheet { --gap: 26px; }
+.strip {
+    position: absolute; left: 0; right: 0;
+    height: calc(100% / 6); top: calc(var(--s) * 100% / 6);
+    background: var(--sheet);
+    border-left: 1.5px solid rgba(27,29,82,.35); border-right: 1.5px solid rgba(27,29,82,.35);
+    transition: transform .7s cubic-bezier(.2,.8,.2,1);
+    transition-delay: calc(var(--s) * 40ms);
+    overflow: hidden;
+}
+.strip:first-child { border-top: 1.5px solid rgba(27,29,82,.35); }
+.strip:last-child { border-bottom: 1.5px solid rgba(27,29,82,.35); }
+/* renglones de texto impreso */
+.strip::before {
+    content: ""; position: absolute; inset: 14% 11%;
+    background: repeating-linear-gradient(to bottom, rgba(27,29,82,.55) 0 3px, transparent 3px 11px);
+    -webkit-mask: linear-gradient(90deg, #000 70%, transparent 100%);
+            mask: linear-gradient(90deg, #000 70%, transparent 100%);
+}
+.sheet.top .strip:first-child::before {
+    inset: 22% 11% auto; height: 26px;
+    background: var(--ink);
+    -webkit-mask: none; mask: none;
+}
+.sheet.top .strip:first-child::after {
+    content: "Pág. 1"; position: absolute; right: 10%; top: 10%;
+    font-family: var(--display); font-weight: 800; font-size: .8rem; color: var(--mag);
+}
+/* el corte: la hoja superior se separa en 6 tiras = chunks */
+.stack.cut .sheet.top .strip {
+    transform: translateX(calc((var(--s) - 2.5) * 14px)) translateY(calc((var(--s) - 2.5) * 16px)) translateZ(calc(40px + var(--s) * 18px)) rotateZ(calc((var(--s) - 2.5) * 2.5deg));
+    box-shadow: 0 8px 0 -2px var(--cyan);
+}
+.stack-label {
+    position: absolute; left: 50%; bottom: -66px; transform: translateX(-50%);
+    font-family: var(--display); font-weight: 800; font-size: 1.05rem; white-space: nowrap;
+    background: var(--yel); padding: 4px 12px; border: 2px solid var(--ink);
+    rotate: -3deg;
+}
+.stack-wrap .reg.r1 { top: -44px; left: 50%; }
+.stack-wrap .reg.r2 { bottom: 40%; right: -50px; }
+
+/* ════════════════════════ GUILLOTINA (scroll) ════════════════════════ */
+.cutter { position: relative; height: 340vh; border-top: 3px solid var(--ink); }
+.cutter-stage {
+    position: sticky; top: 0; height: 100vh; overflow: hidden;
+    display: grid; grid-template-columns: minmax(260px, 0.8fr) 1.2fr;
+    gap: clamp(20px, 4vw, 60px); align-items: center;
+    padding: 0 var(--gutter);
+}
+.steps { list-style: none; display: grid; gap: 22px; }
+.steps li {
+    position: relative; padding-left: 74px;
+    opacity: .28; transition: opacity .3s;
+}
+.steps li.on { opacity: 1; }
+.steps li::before {
+    content: attr(data-n);
+    position: absolute; left: 0; top: -6px;
+    font-family: var(--display); font-weight: 900; font-size: 3.6rem; line-height: 1;
+    color: var(--paper); -webkit-text-stroke: 2px var(--ink);
+}
+.steps li.on::before { color: var(--yel); text-shadow: 4px 4px 0 var(--mag); }
+.steps h3 { font-family: var(--display); font-weight: 900; font-size: clamp(1.7rem, 2.8vw, 2.4rem); line-height: 1; text-transform: uppercase; }
+.steps p { max-width: 26rem; margin-top: 6px; font-size: 1.02rem; }
+.cutter-title {
+    position: absolute; top: 28px; left: var(--gutter);
+    font-family: var(--display); font-weight: 900; font-size: clamp(1.1rem, 1.6vw, 1.4rem);
+    background: var(--ink); color: var(--paper); padding: 4px 12px;
+}
+.bench { position: relative; height: min(78vh, 640px); }
+.bench .page {
+    position: absolute; left: 6%; top: 8%; width: 34%; aspect-ratio: 210/297;
+    background: var(--sheet); border: 2px solid var(--ink);
+    box-shadow: 10px 10px 0 var(--paper-2);
+}
+.bench .page::before {
+    content: ""; position: absolute; inset: 9% 10%;
+    background: repeating-linear-gradient(to bottom, rgba(27,29,82,.5) 0 3px, transparent 3px 10px);
+}
+.bench .page::after {
+    content: "Texto_Lectura_Oratoria.pdf"; position: absolute; left: 0; top: -30px;
+    font-family: var(--display); font-weight: 800; font-size: .95rem;
+}
+.blade {
+    position: absolute; left: 2%; width: 42%; height: 4px; top: 8%;
+    background: var(--mag);
+    box-shadow: 0 0 0 2px var(--ink);
+    opacity: 0;
+}
+.blade::after { content: ""; position: absolute; right: -10px; top: -9px; border: 11px solid transparent; border-left: 14px solid var(--ink); }
+.chunk {
+    position: absolute; left: 0; top: 0;
+    height: 30px;
+    background: var(--sheet); border: 2px solid var(--ink);
+    display: flex; align-items: center; overflow: hidden;
+    will-change: transform;
+}
+.chunk .txt {
+    position: absolute; inset: 6px 8px;
+    background: repeating-linear-gradient(to bottom, rgba(27,29,82,.55) 0 3px, transparent 3px 8px);
+}
+.chunk .vec { position: absolute; inset: 0; opacity: 0; }
+.drawer .drow {
+    position: absolute; left: 10px; width: 120px;
+    display: grid; grid-template-columns: 60px 60px; align-items: center;
+    font-family: var(--display); font-weight: 800; font-size: 1.05rem;
+}
+.drawer .drow span:last-child { color: var(--mag); }
+.drawer {
+    position: absolute; right: 2%; bottom: 4%; width: 52%; height: 56%;
+    border: 3px solid var(--ink); background: var(--paper-2);
+    box-shadow: 10px 10px 0 var(--ink);
+    opacity: 0; transform: translateY(30px);
+}
+.drawer .tab {
+    position: absolute; left: -3px; top: -38px;
+    font-family: var(--display); font-weight: 900; font-size: 1.05rem;
+    background: var(--ink); color: var(--paper); padding: 6px 12px;
+}
+.drawer .cols {
+    white-space: nowrap; overflow: hidden;
+    position: absolute; left: 0; right: 0; top: 0; height: 30px;
+    display: grid; grid-template-columns: 60px 60px 1fr;
+    border-bottom: 2px solid var(--ink);
+    font-family: var(--display); font-weight: 800; font-size: .95rem;
+    align-items: center; padding: 0 10px;
+}
+
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ════════════════════════ CIERRE ════════════════════════ */
+.end {
+    position: relative; overflow: hidden;
+    border-top: 3px solid var(--ink);
+    background: var(--ink); color: var(--paper);
+    padding: clamp(70px, 10vw, 140px) var(--gutter) 50px;
+    display: grid; grid-template-columns: auto 1fr; gap: clamp(24px, 5vw, 80px); align-items: center;
+}
+.end .big {
+    writing-mode: vertical-rl; transform: rotate(180deg);
+    font-family: var(--display); font-weight: 900; text-transform: uppercase;
+    font-size: clamp(5rem, 13vw, 12rem); line-height: .8;
+    color: transparent; -webkit-text-stroke: 3px var(--yel);
+    user-select: none;
+}
+.end h2 { color: var(--paper); text-shadow: 5px 5px 0 var(--mag), 10px 10px 0 var(--cyan); }
+.end p { max-width: 34rem; margin: 22px 0 34px; font-size: 1.15rem; }
+.end .btn { background: var(--yel); color: var(--ink); box-shadow: 7px 7px 0 var(--mag), 7px 7px 0 3px var(--cyan); border-color: var(--paper); }
+.end .btn:hover { box-shadow: 4px 4px 0 var(--mag), 4px 4px 0 3px var(--cyan); }
+.facts { display: flex; flex-wrap: wrap; gap: 10px 26px; margin-top: 54px; font-size: .98rem; opacity: .9; }
+.facts b { font-family: var(--display); font-weight: 800; font-size: 1.15rem; color: var(--yel); margin-right: 6px; }
+footer {
+    background: var(--ink); color: var(--paper-2);
+    border-top: 1px dashed rgba(220,225,218,.35);
+    padding: 18px var(--gutter); font-size: .9rem;
+}
+
+
+/* ════════════════════════ CADA ARCHIVO, SU TALLER ════════════════════════
+   Cada panel usa la escena real que toma la app con ese tipo de archivo
+   (las mismas paletas y tipografías de assets/css/escenas.css).            */
+.talleres-intro {
+    border-top: 3px solid var(--ink);
+    padding: clamp(60px, 8vw, 110px) var(--gutter) clamp(30px, 4vw, 50px);
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(24px, 4vw, 60px); align-items: end;
+}
+.talleres-intro h2 {
+    font-family: var(--display); font-weight: 900; text-transform: uppercase;
+    font-size: clamp(3rem, 7vw, 6.4rem); line-height: .86;
+    text-shadow: 5px 5px 0 var(--yel), 9px 9px 0 var(--mag);
+}
+.talleres-intro p { max-width: 32rem; }
+.swatches { display: flex; gap: 0; margin-top: 18px; border: 2px solid var(--ink); width: max-content; }
+.swatches a {
+    display: block; padding: 8px 14px; text-decoration: none; font-weight: 600; font-size: .95rem;
+    border-right: 2px solid var(--ink);
+}
+.swatches a:last-child { border-right: 0; }
+.swatches a:nth-child(1) { background: var(--yel); font-family: var(--display); font-weight: 800; font-size: 1.1rem; }
+.swatches a:nth-child(2) { background: #1E130C; color: #F0A830; font-family: 'Big Shoulders Stencil Display', var(--display); font-size: 1.1rem; }
+.swatches a:nth-child(3) { background: #FBFDFF; color: #2B3BD6; font-family: 'Bricolage Grotesque', sans-serif; }
+.swatches a:nth-child(4) { background: #10231C; color: #FFC857; font-family: 'Unbounded', sans-serif; font-size: .8rem; }
+
+.taller {
+    position: relative; overflow: hidden;
+    min-height: 100vh; padding: clamp(60px, 8vw, 110px) var(--gutter);
+    display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: clamp(30px, 5vw, 80px); align-items: center;
+    border-top: 3px solid var(--ink);
+    background: var(--t-bg); color: var(--t-ink); font-family: var(--t-body);
+}
+.taller .t-name {
+    font-family: var(--t-display); font-weight: 900; line-height: .85;
+    font-size: clamp(3.4rem, 8.5vw, 8rem); letter-spacing: .01em;
+}
+.taller .t-for { display: block; margin-top: 14px; font-size: 1.15rem; font-style: italic; color: var(--t-soft); }
+.taller .t-text { max-width: 31rem; margin-top: 22px; font-size: 1.06rem; }
+.taller dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 18px; margin-top: 28px; max-width: 31rem; font-size: .98rem; }
+.taller dt { font-family: var(--t-display); font-weight: 800; color: var(--t-accent); }
+.taller dd { color: var(--t-ink); }
+.t-ask {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 30px;
+}
+.t-q { padding: 10px 16px; font-size: 1rem; background: var(--t-q-bg); color: var(--t-q-ink); }
+.t-run {
+    font: inherit; font-family: var(--t-display); font-weight: 800; font-size: 1.05rem; cursor: pointer;
+    padding: 10px 18px; border: 0; background: var(--t-accent); color: var(--t-on-accent);
+    transition: transform .12s, filter .12s;
+}
+.t-run:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.t-run:active { transform: translateY(1px); }
+
+/* ── Imprenta (PDF) ── */
+.sc-pdf {
+    --t-bg: var(--paper); --t-ink: var(--ink); --t-soft: #4F5470; --t-accent: var(--mag); --t-on-accent: var(--sheet);
+    --t-display: var(--display); --t-body: var(--serif); --t-q-bg: var(--ink); --t-q-ink: var(--paper);
+}
+.sc-pdf .t-name { color: var(--sheet); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; text-shadow: 6px 4px 0 var(--mag), -5px -3px 0 var(--cyan); }
+.sc-pdf .t-run { border: 3px solid var(--ink); box-shadow: 5px 5px 0 var(--ink); }
+.galley {
+    position: relative; background: var(--sheet); border: 2px solid var(--ink); box-shadow: 12px 12px 0 var(--ink);
+    padding: 9% 9% 11%; max-width: 560px; justify-self: center; font-size: .92rem; line-height: 1.75;
+}
+.galley .pno { position: absolute; top: 12px; right: 16px; font-family: var(--display); font-weight: 800; color: var(--mag); }
+.galley h4 { font-family: var(--display); font-weight: 900; font-size: 1.5rem; margin-bottom: 10px; }
+.galley p + p { margin-top: 12px; }
+.galley .hl { background-image: linear-gradient(var(--yel), var(--yel)); background-repeat: no-repeat; background-size: 0% 100%;
+    transition: background-size .9s cubic-bezier(.3, .7, .3, 1); -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.galley.marked .hl { background-size: 100% 100%; }
+.galley .kw { background-image: linear-gradient(var(--mag), var(--mag)); background-repeat: no-repeat; background-position: 0 100%;
+    background-size: 0% 3px; transition: background-size .35s ease-out .9s; padding-bottom: 1px; }
+.galley.marked .kw { background-size: 100% 3px; }
+.galley .legend {
+    position: absolute; left: -2px; right: -2px; bottom: -2px; transform: translateY(100%);
+    padding: 8px 14px; background: var(--ink); color: var(--paper); font-family: var(--display); font-weight: 800; font-size: 1.05rem;
+    opacity: 0; transition: opacity .3s .9s;
+}
+.galley.marked .legend { opacity: 1; }
+.galley .legend em { font-family: var(--serif); font-weight: 400; color: var(--yel); }
+
+/* ── Moviola (video) ── */
+.sc-video {
+    --t-bg: #1E130C; --t-ink: #F4E6C8; --t-soft: #C3AC8A; --t-accent: #F0A830; --t-on-accent: #1E130C;
+    --t-display: 'Big Shoulders Stencil Display', var(--display); --t-body: 'Courier Prime', 'Courier New', monospace;
+    --t-q-bg: #5E4632; --t-q-ink: #F4E6C8; --film: #120A06;
+    padding-left: calc(var(--gutter) + 22px); padding-right: calc(var(--gutter) + 22px);
+}
+.sc-video::before, .sc-video::after {
+    content: ""; position: absolute; top: 0; bottom: 0; width: 22px; background-color: var(--film);
+    background-image: repeating-linear-gradient(to bottom, transparent 0 10px, rgba(244, 230, 200, .75) 10px 22px, transparent 22px 32px);
+    background-size: 9px 100%; background-repeat: no-repeat; background-position: center;
+}
+.sc-video::before { left: 0; } .sc-video::after { right: 0; }
+.sc-video .t-name { color: #F0A830; text-shadow: 0 0 40px rgba(240, 168, 48, .35); }
+.sc-video .t-run, .sc-video .t-q { border-radius: 3px; }
+.moviola { display: grid; gap: 14px; }
+.gate {
+    position: relative; border-radius: 26px / 18px; overflow: hidden; background: #000;
+    box-shadow: 0 0 0 7px var(--film), 0 0 0 8px #5E4632, 0 0 90px rgba(240, 168, 48, .22);
+}
+.gate::before { content: ""; display: block; height: 12px; background: repeating-linear-gradient(-45deg, #F4E6C8 0 14px, #000 14px 28px); }
+.gate svg { display: block; width: 100%; height: auto; }
+.gate .tc {
+    position: absolute; right: 14px; bottom: 10px; font-family: 'Courier Prime', monospace; font-weight: 700;
+    color: #F0A830; background: rgba(0, 0, 0, .55); padding: 2px 8px; font-size: .95rem;
+}
+.gate .rec { position: absolute; left: 14px; top: 24px; display: flex; align-items: center; gap: 6px; font-size: .78rem; color: #F4E6C8; }
+.gate .rec i { width: 9px; height: 9px; border-radius: 50%; background: #E0322B; box-shadow: 0 0 8px #E0322B; animation: blink 1.4s steps(1) infinite; }
+#net .lnk { stroke: #F0A830; stroke-width: 2.5; transition: stroke .3s, stroke-dasharray .3s; }
+#net .nd { fill: #2B1D13; stroke: #F4E6C8; stroke-width: 2; }
+#net .sw { fill: #F0A830; transition: fill .3s; }
+#net .x { opacity: 0; transition: opacity .3s; stroke: #fff; stroke-width: 4; }
+#net[data-state="fail"] .lnk { stroke: #E0322B; stroke-dasharray: 6 6; }
+#net[data-state="fail"] .sw { fill: #E0322B; }
+#net[data-state="fail"] .x { opacity: 1; }
+.strip-tl {
+    position: relative; height: 48px; cursor: pointer; border-radius: 3px; background-color: var(--film);
+    background-image: repeating-linear-gradient(90deg, transparent 0 6px, rgba(244, 230, 200, .5) 6px 12px, transparent 12px 18px),
+                      repeating-linear-gradient(90deg, rgba(244, 230, 200, .07) 0 46px, transparent 46px 50px);
+    background-size: 18px 5px, 100% 100%; background-repeat: repeat-x, repeat; background-position: 0 3px, 0 0;
+}
+.strip-tl .seg { position: absolute; top: 12px; height: 22px; background: #F0A830; box-shadow: 0 0 14px rgba(240, 168, 48, .6);
+    transform-origin: left; transform: scaleX(0); transition: transform .5s ease-out; }
+.strip-tl.on .seg { transform: scaleX(1); }
+.strip-tl .head { position: absolute; top: -6px; bottom: -6px; width: 2px; background: #E0322B; left: 0; transition: left .6s cubic-bezier(.4, 0, .2, 1); }
+.strip-tl .head::before { content: ""; position: absolute; top: -2px; left: -5px; border: 6px solid transparent; border-top-color: #E0322B; }
+.tr { display: grid; gap: 6px; }
+.tr button {
+    display: grid; grid-template-columns: 62px 1fr; gap: 10px; text-align: left; cursor: pointer;
+    padding: 8px 12px; font: inherit; font-size: .9rem; line-height: 1.45; color: var(--t-ink);
+    background: #2B1D13; border: 1px solid #5E4632; border-radius: 3px;
+}
+.tr button b { color: #F0A830; }
+.tr button.cited { border: 2px solid #F0A830; box-shadow: 0 0 22px rgba(240, 168, 48, .3); }
+.tr button.now { background: #3A2618; }
+.sc-audio .tr button.now { background: #2E5546; }
+.tr mark { background: #5C2A10; color: inherit; box-shadow: inset 0 -3px 0 #F0A830; padding: 0 2px; }
+.tr .frame { color: var(--t-soft); font-style: italic; }
+
+/* ── Mesa de luz (imagen) ── */
+.sc-image {
+    --t-bg: #E8EEF3; --t-ink: #16181D; --t-soft: #4C5661; --t-accent: #D7263D; --t-on-accent: #fff;
+    --t-display: 'Bricolage Grotesque', sans-serif; --t-body: 'Bricolage Grotesque', sans-serif;
+    --t-q-bg: #2B3BD6; --t-q-ink: #fff;
+    background:
+        radial-gradient(ellipse at 65% 45%, rgba(255, 255, 255, .95), rgba(255, 255, 255, 0) 60%),
+        linear-gradient(rgba(43, 59, 214, .07) 1px, transparent 1px) 0 0 / 32px 32px,
+        linear-gradient(90deg, rgba(43, 59, 214, .07) 1px, transparent 1px) 0 0 / 32px 32px,
+        #E8EEF3;
+}
+.sc-image .t-name { font-weight: 800; letter-spacing: -.03em; color: #16181D; }
+.sc-image .t-name span { color: #2B3BD6; }
+.sc-image .t-run, .sc-image .t-q { border-radius: 10px; }
+.sc-image .t-run { box-shadow: 0 6px 16px rgba(215, 38, 61, .3); }
+.mount {
+    justify-self: center; background: #E6E2D8; border-radius: 16px; padding: 26px 26px 50px; position: relative;
+    box-shadow: inset 0 1px 0 #fff, inset 0 -2px 0 rgba(0, 0, 0, .06), 0 24px 50px rgba(22, 24, 29, .2); rotate: 1.5deg;
+}
+.mount::after { content: "cafe_la_loma.jpg"; position: absolute; left: 0; right: 0; bottom: 16px; text-align: center; font-weight: 600; font-size: .85rem; color: #6C7884; }
+.slide { position: relative; width: min(330px, 70vw); cursor: crosshair; }
+.slide svg { display: block; width: 100%; height: auto; border-radius: 6px; box-shadow: 0 0 0 1px rgba(0, 0, 0, .2); }
+.ring {
+    position: absolute; border: 3px solid #D7263D; border-radius: 50%; rotate: -3deg; pointer-events: none;
+    clip-path: inset(0 100% 0 0); transition: clip-path .6s ease-out;
+}
+.ring::after { content: ""; position: absolute; inset: -4px -7px; border: 2px solid #D7263D; border-radius: 50%; opacity: .45; rotate: 5deg; }
+.rowmark { position: absolute; background: rgba(43, 59, 214, .22); border-radius: 3px; pointer-events: none; opacity: 0; transition: opacity .4s .5s; }
+.slide.marked .ring { clip-path: inset(0 0 0 0); }
+.slide.marked .rowmark { opacity: 1; }
+.loupe {
+    position: absolute; width: 150px; height: 150px; border-radius: 50%; overflow: hidden; pointer-events: none; z-index: 3;
+    border: 4px solid #16181D; background: #fff; box-shadow: 0 0 0 2px rgba(255, 255, 255, .85), 0 14px 30px rgba(0, 0, 0, .35);
+    opacity: 0; transform: scale(.6); transition: opacity .15s, transform .15s;
+}
+.loupe.on { opacity: 1; transform: scale(1); }
+.loupe svg { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.notes { display: grid; gap: 8px; margin-top: 22px; max-width: 31rem; }
+.notes div { background: #FBFDFF; border: 1px solid #B9C4CE; border-radius: 10px; padding: 10px 14px; font-size: .95rem; box-shadow: 0 6px 18px rgba(22, 24, 29, .08); }
+.notes b { color: #2B3BD6; margin-right: 6px; }
+
+/* ── Estudio de radio (audio) ── */
+.sc-audio {
+    --t-bg: #10231C; --t-ink: #F2EAD3; --t-soft: #AFC4B8; --t-accent: #FF8A3D; --t-on-accent: #2A0F05;
+    --t-display: 'Unbounded', sans-serif; --t-body: var(--serif); --t-q-bg: #2E5546; --t-q-ink: #F2EAD3;
+}
+.sc-audio .t-name { font-weight: 800; font-size: clamp(2.6rem, 6.4vw, 6rem); line-height: .95; color: #FFC857; text-shadow: 0 0 34px rgba(255, 200, 87, .3); }
+.sc-audio .t-run, .sc-audio .t-q { border-radius: 22px; }
+.sc-audio dt { font-weight: 500; font-size: .85rem; }
+.radio {
+    position: relative; border-radius: 30px; padding: 22px; background-color: #183027; border: 1px solid #3E6555;
+    background-image: radial-gradient(rgba(0, 0, 0, .35) 1.4px, transparent 1.6px); background-size: 9px 9px;
+    box-shadow: inset 0 2px 0 rgba(255, 255, 255, .06), 0 10px 0 rgba(0, 0, 0, .35);
+}
+.onair {
+    position: absolute; top: 14px; right: 20px; padding: 2px 10px; border-radius: 12px;
+    font: 500 .62rem/1.5 'Unbounded', sans-serif; letter-spacing: .06em; background: #3E6555; color: #10231C; transition: background .3s, box-shadow .3s;
+}
+.radio.playing .onair { background: #FF8A3D; color: #2A0F05; box-shadow: 0 0 14px rgba(255, 138, 61, .8); }
+.eqbars { display: flex; align-items: flex-end; gap: 5px; height: 110px; padding: 12px; border-radius: 16px; background: #0B1A15; margin-top: 22px;
+    box-shadow: inset 0 0 0 1px #3E6555, inset 0 0 40px rgba(255, 200, 87, .08); }
+.eqbars i {
+    flex: 1; height: 8%; border-radius: 3px 3px 0 0;
+    background: repeating-linear-gradient(to top, #FFC857 0 4px, transparent 4px 7px);
+}
+.radio.playing .eqbars i { animation: eq .9s ease-in-out infinite alternate; animation-delay: calc(var(--k) * -137ms); }
+.radio.playing .eqbars i:nth-child(3n) { background: repeating-linear-gradient(to top, #FFC857 0 4px, transparent 4px 7px, #FFC857 7px), #0B1A15; }
+@keyframes eq { 0% { height: 12%; } 50% { height: calc(30% + var(--k) * 3%); } 100% { height: calc(55% + var(--k) * 2%); } }
+.dial {
+    position: relative; height: 70px; margin-top: 16px; border-radius: 16px; overflow: hidden; cursor: pointer;
+    background: linear-gradient(180deg, rgba(255, 200, 87, .10), rgba(255, 200, 87, 0) 60%), #0B1A15;
+    box-shadow: inset 0 0 0 1px #3E6555, inset 0 0 30px rgba(255, 200, 87, .12);
+}
+.dial .tick { position: absolute; top: 0; height: 16px; width: 1px; background: #FFC857; opacity: .7; }
+.dial .tick em { position: absolute; top: 20px; left: 3px; font: 500 .55rem 'Unbounded', sans-serif; color: #FFC857; font-style: normal; }
+.dial .seg { position: absolute; bottom: 9px; height: 10px; border-radius: 6px; background: #FFC857; box-shadow: 0 0 12px rgba(255, 200, 87, .8); opacity: 0; transition: opacity .4s; }
+.dial.on .seg { opacity: 1; }
+.dial .needle { position: absolute; top: 0; bottom: 0; width: 3px; background: #FF8A3D; box-shadow: 0 0 10px #FF8A3D; transition: left .8s cubic-bezier(.4, 0, .2, 1); }
+.knobrow { display: flex; align-items: center; gap: 14px; margin-top: 16px; }
+.knobrow label { font: 500 .7rem 'Unbounded', sans-serif; color: #AFC4B8; }
+.knobrow input[type=range] { flex: 1; accent-color: #FF8A3D; }
+.sc-audio .tr button { background: #183027; border-color: #3E6555; border-radius: 16px; color: #F2EAD3; font-family: var(--serif); }
+.sc-audio .tr button b { color: #FFC857; font-family: 'Unbounded', sans-serif; font-size: .78rem; font-weight: 500; }
+.sc-audio .tr button.cited { border: 2px solid #FFC857; box-shadow: 0 0 0 4px rgba(255, 200, 87, .18); }
+.sc-audio .tr mark { background: #2E5546; box-shadow: inset 0 -3px 0 #FF8A3D; }
+.sc-audio .tr { margin-top: 14px; }
+
+/* ════════════════════════ TODA LA BASE: COLLAGE ════════════════════════ */
+.collage {
+    position: relative; border-top: 3px solid var(--ink);
+    padding: clamp(60px, 9vw, 120px) var(--gutter);
+    display: grid; grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr); gap: clamp(30px, 5vw, 80px); align-items: center;
+}
+.collage h2, .end h2 {
+    font-family: var(--display); font-weight: 900; text-transform: uppercase;
+    font-size: clamp(2.8rem, 6vw, 5.6rem); line-height: .88; color: var(--ink);
+    text-shadow: 5px 5px 0 var(--yel), 9px 9px 0 var(--mag);
+}
+.collage .intro p { max-width: 32rem; margin-top: 22px; }
+.board { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 22px; padding: 10px; }
+.tile {
+    position: relative; display: block; text-decoration: none; padding: 18px 16px 16px; min-height: 140px; cursor: pointer;
+    border: 0; text-align: left; font: inherit; transition: transform .2s;
+}
+.tile:hover { transform: rotate(0deg) translateY(-4px) !important; }
+.tile .tn { display: block; font-size: 1.6rem; line-height: 1; }
+.tile .tf { display: block; margin-top: 8px; font-size: .9rem; opacity: .85; }
+.tile::before { /* cinta adhesiva */
+    content: ""; position: absolute; top: -12px; left: 50%; width: 90px; height: 24px; translate: -50% 0; rotate: -4deg;
+    background: repeating-linear-gradient(90deg, rgba(255, 229, 0, .75) 0 10px, rgba(255, 241, 161, .75) 10px 20px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, .12);
+}
+.tile.k-pdf { background: var(--sheet); color: var(--ink); border: 2px solid var(--ink); box-shadow: 6px 6px 0 var(--ink); rotate: -2deg; }
+.tile.k-pdf .tn { font-family: var(--display); font-weight: 900; font-size: 2rem; }
+.tile.k-video { background: #1E130C; color: #F4E6C8; rotate: 2deg; box-shadow: 0 0 0 4px #120A06; font-family: 'Courier Prime', monospace; }
+.tile.k-video .tn { font-family: 'Big Shoulders Stencil Display', var(--display); font-weight: 900; color: #F0A830; font-size: 2rem; }
+.tile.k-image { background: #FBFDFF; color: #16181D; border-radius: 12px; box-shadow: 0 10px 24px rgba(22, 24, 29, .18); rotate: 1.5deg; font-family: 'Bricolage Grotesque', sans-serif; }
+.tile.k-image .tn { font-weight: 800; color: #2B3BD6; }
+.tile.k-audio { background: #10231C; color: #F2EAD3; border-radius: 22px; rotate: -1.5deg; }
+.tile.k-audio .tn { font-family: 'Unbounded', sans-serif; font-weight: 800; color: #FFC857; font-size: 1.25rem; }
+.tile.lit { outline: 4px solid var(--mag); outline-offset: 4px; }
+.kb-chat { margin-top: 30px; display: grid; gap: 12px; max-width: 34rem; }
+.kb-chat .q { justify-self: end; background: var(--ink); color: var(--paper); padding: 12px 16px; }
+.kb-chat .a { background: var(--sheet); border: 2px solid var(--ink); box-shadow: 6px 6px 0 var(--cyan); padding: 14px 16px; line-height: 1.6; }
+.kb-chat .a button {
+    font: inherit; font-weight: 600; cursor: pointer; border: 0; padding: 0 5px; margin: 0 1px;
+    background: var(--yel); color: var(--ink); border-bottom: 2px solid var(--mag);
+}
+.kb-chat .a button:hover { background: var(--mag); color: var(--sheet); }
+
+/* ════════════════════════ COLOFÓN (servicios) ════════════════════════ */
+.colofon { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0; margin-top: 46px; border-top: 1px dashed rgba(220, 225, 218, .4); }
+.colofon div { padding: 16px 18px 16px 0; border-bottom: 1px dashed rgba(220, 225, 218, .4); }
+.colofon b { display: block; font-family: var(--display); font-weight: 800; font-size: 1.2rem; color: var(--yel); }
+.colofon span { font-size: .95rem; opacity: .9; }
+
+/* ════════════════════════ RESPONSIVE ════════════════════════ */
+@media (max-width: 900px) {
+    .slug { width: 24px; }
+    .slug span { font-size: .75rem; }
+    main { margin-left: 24px; }
+    .hero { grid-template-columns: 1fr; padding-bottom: 110px; }
+    .stack-wrap { width: min(66%, 280px); margin-top: 70px; }
+    .stack.cut .sheet.top .strip { transform: translateX(calc((var(--s) - 2.5) * 8px)) translateY(calc((var(--s) - 2.5) * 9px)) translateZ(calc(20px + var(--s) * 8px)) rotateZ(calc((var(--s) - 2.5) * 2deg)); }
+    .drawer { width: 92%; right: 4%; height: 50%; }
+    .drawer .cols { font-size: .8rem; grid-template-columns: 40px 50px 1fr; }
+    .drawer .drow { width: 90px; grid-template-columns: 40px 50px; }
+    .stack-wrap .reg.r2 { display: none; }
+    .cutter { height: 300vh; }
+    .cutter-stage { grid-template-columns: 1fr; grid-template-rows: auto 1fr; align-content: start; padding-top: 80px; gap: 10px; }
+    .steps { gap: 10px; }
+    .steps li { padding-left: 52px; display: none; }
+    .steps li.on { display: block; }
+    .steps li::before { font-size: 2.6rem; }
+    .bench { height: 52vh; }
+    .end { grid-template-columns: 1fr; }
+    .talleres-intro, .taller, .collage { grid-template-columns: 1fr; }
+    .taller { min-height: 0; }
+    .sc-video::before, .sc-video::after { width: 12px; background-size: 6px 100%; }
+    .sc-video { padding-left: calc(var(--gutter) + 12px); padding-right: calc(var(--gutter) + 12px); }
+    .swatches { flex-wrap: wrap; width: auto; }
+    .board { margin-top: 10px; }
+    .end .big { writing-mode: horizontal-tb; transform: none; font-size: clamp(4rem, 22vw, 7rem); }
+}
+@media (max-width: 520px) {
+    .top nav a { font-size: 1rem; padding: 5px 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    html { scroll-behavior: auto; }
+}
+</style>
+</head>
+<body>
+
+<div class="slug" aria-hidden="true">
+    <span>
+        Archivo Vivo<i>✂</i>prueba de corte n.º 3<i>✂</i>PDFs · imágenes · audios · videos<i>✂</i>EmbeddingGemma 2 + llama.cpp<i>✂</i>te marca de dónde lo sacó<i>✂</i>
+        Archivo Vivo<i>✂</i>prueba de corte n.º 3<i>✂</i>PDFs · imágenes · audios · videos<i>✂</i>EmbeddingGemma 2 + llama.cpp<i>✂</i>te marca de dónde lo sacó<i>✂</i>
+    </span>
+</div>
+
+<main>
+    <header class="top">
+        <a class="logo" href="/">Archivo Vivo</a>
+        <nav><a href="/login" data-entry>Iniciar sesión</a></nav>
+    </header>
+
+    <!-- ═════════ HERO ═════════ -->
+    <section class="hero" id="hero">
+        <div>
+            <h1 id="headline" aria-label="Pregúntale al archivo">
+                <span class="row" data-split>Pregúntale</span>
+                <span class="row solid" data-split>al archivo</span>
+            </h1>
+            <p class="lede">
+                Una sola base de conocimiento con PDFs, imágenes, audios y videos cortos. Pregúntale lo que necesites:
+                busca en el texto, en las imágenes, en lo que se dice y en lo que se ve, y <em>te subraya en el archivo</em> el párrafo, el precio o el minuto de donde lo sacó.
+            </p>
+            <div class="actions">
+                <a class="btn" href="/login" data-entry data-cta>Entrar al archivo</a>
+                <span class="hint">Toca la pila de hojas para cortarla.</span>
+            </div>
+        </div>
+
+        <div class="stack-wrap" aria-hidden="true">
+            <span class="reg r1"></span><span class="reg r2"></span>
+            <span class="crop tl"></span><span class="crop tr"></span><span class="crop bl"></span><span class="crop br"></span>
+            <div class="stack" id="stack" role="button" tabindex="0" aria-label="Cortar la hoja superior en fragmentos"></div>
+            <span class="stack-label" id="stack-label">10 hojas, como máximo</span>
+        </div>
+    </section>
+
+    <!-- ═════════ GUILLOTINA ═════════ -->
+    <section class="cutter" id="cutter" aria-label="Cómo lee tus archivos">
+        <div class="cutter-stage">
+            <span class="cutter-title">Lo que pasa cuando entra un archivo</span>
+            <ol class="steps" id="steps">
+                <li data-n="1" class="on">
+                    <h3>Lo lee todo</h3>
+                    <p>De un PDF saca el texto hoja por hoja y describe sus imágenes con un modelo de visión; de una foto o afiche, lo que se ve y el texto que tiene. De un audio o video, transcribe lo que se dice con Whisper y describe algunos fotogramas.</p>
+                </li>
+                <li data-n="2">
+                    <h3>Lo corta en tiras</h3>
+                    <p>Las páginas se dividen en trozos de unas 220 palabras que se solapan 40; las transcripciones, en tramos de unas 120 palabras con su minuto de inicio y de fin.</p>
+                </li>
+                <li data-n="3">
+                    <h3>Las vuelve números</h3>
+                    <p>EmbeddingGemma 2, corriendo en tu PC con llama.cpp, convierte cada trozo en un vector de 768 números que representa de qué habla, no solo qué palabras usa.</p>
+                </li>
+                <li data-n="4">
+                    <h3>Las archiva</h3>
+                    <p>Todo va a una sola tabla en PostgreSQL con pgvector. Cuando preguntas, busca los trozos más parecidos en toda la base y solo con esos responde.</p>
+                </li>
+            </ol>
+            <div class="bench" id="bench" aria-hidden="true">
+                <div class="page" id="bench-page"></div>
+                <div class="blade" id="blade"></div>
+                <div class="drawer" id="drawer">
+                    <span class="tab">kb_fragmentos</span>
+                    <div class="cols"><span>id</span><span>pág. / min.</span><span>embedding · vector(768)</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═════════ CADA ARCHIVO, SU TALLER ═════════ -->
+    <section class="talleres-intro" id="talleres">
+        <h2>Cada archivo, su taller</h2>
+        <div>
+            <p>Cuando le preguntas a un solo archivo, la app se transforma en el lugar donde ese medio se trabaja de verdad.
+               Así se ve cada uno y así te muestra de dónde salió la respuesta.</p>
+            <nav class="swatches" aria-label="Talleres">
+                <a href="#t-pdf">Imprenta</a><a href="#t-video">Moviola</a><a href="#t-image">Mesa de luz</a><a href="#t-audio">Estudio de radio</a>
+            </nav>
+        </div>
+    </section>
+
+    <!-- Imprenta · PDF -->
+    <section class="taller sc-pdf" id="t-pdf" aria-labelledby="n-pdf">
+        <div>
+            <h3 class="t-name" id="n-pdf">Imprenta</h3>
+            <span class="t-for">para tus PDF</span>
+            <p class="t-text">Lee el texto hoja por hoja, con OCR si es un escaneo, y describe las imágenes que trae. Cuando responde, busca el párrafo exacto en la página: lo pinta con resaltador y subraya las palabras de tu pregunta.</p>
+            <dl>
+                <dt>Lee</dt><dd>PyMuPDF y RapidOCR para páginas escaneadas</dd>
+                <dt>Ve</dt><dd>qwen2.5vl describe las imágenes de cada página</dd>
+                <dt>Marca</dt><dd>el párrafo usado y tus palabras clave</dd>
+                <dt>Hasta</dt><dd>10 hojas por PDF</dd>
+            </dl>
+            <div class="t-ask">
+                <span class="t-q">¿Qué dice sobre memorizar el discurso?</span>
+                <button class="t-run" data-run="pdf">Marcar en el PDF</button>
+            </div>
+        </div>
+        <article class="galley" id="galley" aria-label="Página de ejemplo">
+            <span class="pno">Pág. 3</span>
+            <h4>Los cinco cánones</h4>
+            <p>La inventio reúne los argumentos; la dispositio los ordena y la elocutio les da estilo. Cada parte prepara a la siguiente.</p>
+            <p><span class="hl"><span class="kw">Memoria</span>: se refiere a la internalización profunda de la estructura del discurso, evitando la <span class="kw">memorización</span> mecánica palabra por palabra. Permite al orador recordar el hilo conductor y adaptarse al público.</span></p>
+            <p>La actio, por último, cuida la voz, el gesto y la mirada al momento de hablar.</p>
+            <div class="legend">De aquí salió la respuesta · <em>página 3, párrafo 2</em></div>
+        </article>
+    </section>
+
+    <!-- Moviola · video -->
+    <section class="taller sc-video" id="t-video" aria-labelledby="n-video">
+        <div>
+            <h3 class="t-name" id="n-video">Moviola</h3>
+            <span class="t-for">para tus videos</span>
+            <p class="t-text">Separa el audio y lo transcribe con Whisper; toma cuatro fotogramas y el modelo de visión describe lo que se ve. Cada respuesta te lleva al momento exacto: el tramo se enciende en la tira de película y en la transcripción.</p>
+            <dl>
+                <dt>Escucha</dt><dd>Whisper large-v3-turbo, con marcas de tiempo</dd>
+                <dt>Ve</dt><dd>4 fotogramas descritos por qwen2.5vl</dd>
+                <dt>Marca</dt><dd>el tramo en la tira y el minuto</dd>
+                <dt>Hasta</dt><dd>20 minutos por video</dd>
+            </dl>
+            <div class="t-ask">
+                <span class="t-q">¿Qué pasa si falla el switch?</span>
+                <button class="t-run" data-run="video">Ir al momento</button>
+            </div>
+        </div>
+        <div class="moviola">
+            <div class="gate">
+                <span class="rec"><i></i>clase_redes.mp4</span>
+                <svg id="net" viewBox="0 0 320 170" role="img" aria-label="Fotograma: diagrama de una red en estrella">
+                    <rect width="320" height="170" fill="#2B1D13"/>
+                    <g>
+                        <line class="lnk" x1="160" y1="85" x2="60" y2="35"/><line class="lnk" x1="160" y1="85" x2="260" y2="35"/>
+                        <line class="lnk" x1="160" y1="85" x2="50" y2="125"/><line class="lnk" x1="160" y1="85" x2="270" y2="125"/>
+                        <line class="lnk" x1="160" y1="85" x2="160" y2="150"/>
+                    </g>
+                    <circle class="nd" cx="60" cy="35" r="13"/><circle class="nd" cx="260" cy="35" r="13"/>
+                    <circle class="nd" cx="50" cy="125" r="13"/><circle class="nd" cx="270" cy="125" r="13"/><circle class="nd" cx="160" cy="150" r="11"/>
+                    <rect class="sw" x="138" y="70" width="44" height="30" rx="4"/>
+                    <path class="x" d="M146 74 L174 96 M174 74 L146 96"/>
+                    <text x="160" y="22" fill="#F4E6C8" font-family="Courier Prime, monospace" font-size="11" text-anchor="middle">topología en estrella</text>
+                </svg>
+                <span class="tc" id="tc">00:00</span>
+            </div>
+            <div class="strip-tl" id="strip" title="Tira de película: el tramo citado se ilumina">
+                <span class="seg" style="left:58%;width:18%"></span>
+                <span class="head" id="head"></span>
+            </div>
+            <div class="tr" id="tr-video">
+                <button data-t="15"><b>00:15</b><span>Hoy vemos la topología en estrella: todos los equipos se conectan a un punto central.</span></button>
+                <button data-t="48" class="frame-line"><b>00:48</b><span class="frame">Fotograma: un diagrama con cinco equipos unidos a un switch.</span></button>
+                <button data-t="72" data-cite><b>01:12</b><span>Si el <mark>switch</mark> central <mark>falla</mark>, toda la red queda sin conexión.</span></button>
+                <button data-t="105"><b>01:45</b><span>Por eso se recomienda tener un equipo de respaldo.</span></button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Mesa de luz · imagen -->
+    <section class="taller sc-image" id="t-image" aria-labelledby="n-image">
+        <div>
+            <h3 class="t-name" id="n-image">Mesa de <span>luz</span></h3>
+            <span class="t-for">para tus imágenes</span>
+            <p class="t-text">Describe la foto o el afiche con el modelo de visión y lee su texto con OCR. Si preguntas por un precio o un nombre, lo encierra con lápiz rojo y resalta la fila completa. Pasa el cursor por la imagen: la lupa amplía.</p>
+            <div class="notes">
+                <div><b>Ve</b>Un tablero de café con la lista de bebidas y sus precios, escrito a mano con tiza.</div>
+                <div><b>Lee</b>CAFÉ LA LOMA · Tinto pequeño 2.000 · Tinto grande 3.500 · Capuchino 6.000…</div>
+            </div>
+            <div class="t-ask">
+                <span class="t-q">¿Cuánto cuesta el tinto grande?</span>
+                <button class="t-run" data-run="image">Encerrar en la imagen</button>
+            </div>
+        </div>
+        <div class="mount">
+            <div class="slide" id="slide">
+                <svg id="menu-svg" viewBox="0 0 300 400" role="img" aria-label="Imagen de ejemplo: tablero de precios de un café">
+                    <rect width="300" height="400" fill="#2E2A27"/>
+                    <rect x="10" y="10" width="280" height="380" fill="none" stroke="#8B6B4A" stroke-width="8"/>
+                    <text x="150" y="62" fill="#F4EFE6" font-family="Georgia, serif" font-size="26" font-weight="700" text-anchor="middle">CAFÉ LA LOMA</text>
+                    <text x="150" y="86" fill="#C9BFAF" font-family="Georgia, serif" font-size="12" font-style="italic" text-anchor="middle">bebidas calientes</text>
+                    <g fill="#F4EFE6" font-family="Georgia, serif" font-size="16">
+                        <text x="36" y="136">Tinto pequeño</text><text x="264" y="136" text-anchor="end">2.000</text>
+                        <text x="36" y="176">Tinto grande</text><text x="264" y="176" text-anchor="end">3.500</text>
+                        <text x="36" y="216">Capuchino</text><text x="264" y="216" text-anchor="end">6.000</text>
+                        <text x="36" y="256">Aromática</text><text x="264" y="256" text-anchor="end">2.500</text>
+                        <text x="36" y="296">Pandebono</text><text x="264" y="296" text-anchor="end">2.800</text>
+                    </g>
+                    <path d="M40 320 Q150 330 260 318" stroke="#C9BFAF" stroke-width="1.5" fill="none" stroke-dasharray="3 5"/>
+                    <text x="150" y="356" fill="#FFD27A" font-family="Georgia, serif" font-size="15" text-anchor="middle">Domicilio $4.000</text>
+                </svg>
+                <span class="ring" style="left:7%;top:39.5%;width:44%;height:9%"></span>
+                <span class="rowmark" style="left:79%;top:40%;width:12%;height:7%"></span>
+                <div class="loupe" id="loupe" aria-hidden="true"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Estudio de radio · audio -->
+    <section class="taller sc-audio" id="t-audio" aria-labelledby="n-audio">
+        <div>
+            <h3 class="t-name" id="n-audio">Estudio de radio</h3>
+            <span class="t-for">para tus audios</span>
+            <p class="t-text">Transcribe la grabación con sus marcas de tiempo. El dial es la línea de tiempo: la aguja va al minuto citado, el ecualizador se mueve con el sonido real y el tramo usado queda encendido.</p>
+            <dl>
+                <dt>Escucha</dt><dd>Whisper large-v3-turbo en Groq (o local)</dd>
+                <dt>Marca</dt><dd>el tramo en el dial y las palabras clave</dd>
+                <dt>Hasta</dt><dd>20 minutos por audio</dd>
+            </dl>
+            <div class="t-ask">
+                <span class="t-q">¿Qué recomendaron para el examen?</span>
+                <button class="t-run" data-run="audio">Sintonizar la respuesta</button>
+            </div>
+        </div>
+        <div class="radio" id="radio">
+            <span class="onair">al aire</span>
+            <div class="eqbars" aria-hidden="true"></div>
+            <div class="dial" id="dial" title="Dial: la aguja es el momento de la grabación"><span class="needle" id="needle" style="left:4%"></span></div>
+            <div class="knobrow">
+                <label for="knob">Sintonía</label>
+                <input type="range" id="knob" min="0" max="300" value="10" aria-label="Mover la aguja por la grabación">
+            </div>
+            <div class="tr" id="tr-audio">
+                <button data-t="20"><b>00:20</b><span>Bienvenidos al podcast de redes del semestre.</span></button>
+                <button data-t="95"><b>01:35</b><span>Hablamos de direcciones IP privadas y del rango 192.168.</span></button>
+                <button data-t="220" data-cite><b>03:40</b><span>Para el <mark>examen</mark>, <mark>repasen</mark> la topología en estrella y el papel del switch.</span></button>
+                <button data-t="270"><b>04:30</b><span>Nos escuchamos la próxima semana.</span></button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═════════ TODA LA BASE ═════════ -->
+    <section class="collage" id="base">
+        <div class="intro">
+            <h2>Una pregunta, todos los talleres</h2>
+            <p>En "Toda la base" la búsqueda recorre PDFs, imágenes, audios y videos a la vez. La pantalla se vuelve un collage: cada panel toma la escena de lo que muestra, y cada cita te lleva al taller de su archivo y te marca el lugar exacto.</p>
+            <div class="kb-chat">
+                <div class="q">¿Qué pasa si falla el switch y qué hay que repasar para el examen?</div>
+                <div class="a">
+                    Si el switch central falla, toda la red queda sin conexión
+                    <button data-go="video">[clase_redes.mp4, minuto 01:12]</button>. Para el examen recomiendan repasar la topología en estrella
+                    <button data-go="audio">[podcast_redes.mp3, minuto 03:40]</button>, y la memoria del discurso ayuda a explicarlo sin leer
+                    <button data-go="pdf">[oratoria.pdf, página 3]</button>.
+                </div>
+            </div>
+        </div>
+        <div class="board" aria-label="Los cuatro talleres">
+            <button class="tile k-pdf" data-go="pdf"><span class="tn">Imprenta</span><span class="tf">PDF · resaltador y subrayado</span></button>
+            <button class="tile k-video" data-go="video"><span class="tn">Moviola</span><span class="tf">video · tramo en la tira</span></button>
+            <button class="tile k-image" data-go="image"><span class="tn">Mesa de luz</span><span class="tf">imagen · lápiz rojo y lupa</span></button>
+            <button class="tile k-audio" data-go="audio"><span class="tn">Estudio de radio</span><span class="tf">audio · aguja en el dial</span></button>
+        </div>
+    </section>
+
+    <!-- ═════════ CIERRE ═════════ -->
+    <section class="end">
+        <div class="big" aria-hidden="true">Córtalo</div>
+        <div>
+            <h2>Tu archivo ya tiene las respuestas</h2>
+            <p>Entra, sube tus PDFs, imágenes, audios y videos (o cópialos en la carpeta) y hazle la primera pregunta a toda la base. Cada respuesta te dice de dónde salió y te lo marca.</p>
+            <a class="btn" href="/login" data-entry data-cta>Entrar al archivo</a>
+            <div class="facts">
+                <span><b>4</b>tipos de archivo</span>
+                <span><b>10</b>hojas por PDF</span>
+                <span><b>20</b>minutos por audio o video</span>
+                <span><b>768</b>números por vector</span>
+            </div>
+            <div class="colofon" aria-label="Colofón: con qué está hecho">
+                <div><b>EmbeddingGemma 2</b><span>vectores de 768 números, en tu PC con llama.cpp</span></div>
+                <div><b>PostgreSQL + pgvector</b><span>la base de conocimiento, búsqueda por similitud coseno</span></div>
+                <div><b>Llama 3.3 70B en Groq</b><span>escribe las respuestas citando la fuente; Claude de respaldo</span></div>
+                <div><b>Whisper large-v3-turbo</b><span>transcribe audios y videos con marcas de tiempo</span></div>
+                <div><b>qwen2.5vl en Ollama</b><span>describe imágenes, fotos y fotogramas</span></div>
+                <div><b>RapidOCR y PyMuPDF</b><span>leen escaneos y ubican el párrafo para el marcado</span></div>
+            </div>
+        </div>
+    </section>
+    <footer>Archivo Vivo · proyecto de clase de Daniel Guerrero y Sonny Arcos. FastAPI, EmbeddingGemma 2 con llama.cpp, Whisper, qwen2.5vl (Ollama), Groq, PostgreSQL con pgvector, PDF.js y Web Audio.</footer>
+</main>
+
+<script>
+(() => {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // ── Si ya hay sesión, los botones llevan directo a tus documentos ─────────
+    if (localStorage.getItem('chatpdf_token')) {
+        document.querySelectorAll('[data-entry]').forEach(a => { a.href = '/dashboard'; });
+        document.querySelectorAll('[data-cta]').forEach(a => { a.textContent = 'Ir a la base'; });
+        document.querySelector('.top nav a').textContent = 'Mi archivo';
+    }
+
+    // ── Titular: letras con registro de tinta que sigue al cursor ─────────────
+    const chars = [];
+    document.querySelectorAll('[data-split]').forEach(row => {
+        const text = row.textContent; row.textContent = '';
+        for (const c of text) {
+            const s = document.createElement('span');
+            s.className = 'ch' + (c === ' ' ? ' sp' : '');
+            s.textContent = c === ' ' ? ' ' : c;
+            s.setAttribute('aria-hidden', 'true');
+            row.appendChild(s); chars.push(s);
+        }
+    });
+    const hero = document.getElementById('hero');
+    let raf = 0, mx = 0, my = 0;
+    function updateInk() {
+        raf = 0;
+        for (const s of chars) {
+            const r = s.getBoundingClientRect();
+            const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+            const dx = mx - cx, dy = my - cy;
+            const d = Math.hypot(dx, dy);
+            const pull = Math.max(0, 1 - d / 420);           // 1 cerca del cursor, 0 lejos
+            const ox = 6 + pull * 7 * Math.sign(dx || 1);
+            const oy = 3 + pull * 6 * Math.sign(dy || 1);
+            s.style.setProperty('--dx', ox.toFixed(1) + 'px');
+            s.style.setProperty('--dy', oy.toFixed(1) + 'px');
+            s.style.transform = pull > 0 ? `translateY(${(-pull * 12).toFixed(1)}px) rotate(${Math.max(-4, Math.min(4, dx / 60 * pull)).toFixed(1)}deg)` : '';
+        }
+    }
+
+    // ── Pila 3D de 10 hojas, cada una hecha de 6 tiras ────────────────────────
+    const stack = document.getElementById('stack');
+    for (let i = 0; i < 10; i++) {
+        const sh = document.createElement('div');
+        sh.className = 'sheet' + (i === 9 ? ' top' : '');
+        sh.style.setProperty('--i', i);
+        for (let s = 0; s < 6; s++) {
+            const st = document.createElement('div');
+            st.className = 'strip'; st.style.setProperty('--s', s);
+            sh.appendChild(st);
+        }
+        stack.appendChild(sh);
+    }
+    const label = document.getElementById('stack-label');
+    function toggleCut() {
+        const cut = stack.classList.toggle('cut');
+        label.textContent = cut ? '6 fragmentos listos para buscar' : '10 hojas, como máximo';
+    }
+    stack.addEventListener('click', toggleCut);
+    stack.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleCut(); } });
+
+    if (!reduce) {
+        hero.addEventListener('pointermove', e => {
+            mx = e.clientX; my = e.clientY;
+            const r = hero.getBoundingClientRect();
+            const px = (e.clientX - r.left) / r.width - .5;
+            const py = (e.clientY - r.top) / r.height - .5;
+            stack.style.setProperty('--ry', (-22 + px * 34).toFixed(1) + 'deg');
+            stack.style.setProperty('--rx', (14 - py * 26).toFixed(1) + 'deg');
+            if (!raf) raf = requestAnimationFrame(updateInk);
+        });
+        hero.addEventListener('pointerleave', () => {
+            stack.style.removeProperty('--ry'); stack.style.removeProperty('--rx');
+            chars.forEach(s => { s.style.removeProperty('--dx'); s.style.removeProperty('--dy'); s.style.transform = ''; });
+        });
+    }
+
+    // ── Guillotina: la animación avanza con el scroll ─────────────────────────
+    const cutter = document.getElementById('cutter');
+    const bench = document.getElementById('bench');
+    const page = document.getElementById('bench-page');
+    const blade = document.getElementById('blade');
+    const drawer = document.getElementById('drawer');
+    const steps = [...document.querySelectorAll('#steps li')];
+    const N = 6;
+    const chunks = [], rows = [];
+    // código de barras distinto para cada vector
+    function barcode(seed) {
+        let x = seed * 9301 + 49297, stops = [], pos = 0;
+        const colors = ['var(--ink)', 'var(--mag)', 'var(--cyan)', 'var(--ink)'];
+        while (pos < 100) {
+            x = (x * 9301 + 49297) % 233280; const w = 1 + (x / 233280) * 3.2;
+            const c = colors[Math.floor((x / 233280) * 4)];
+            stops.push(`${c} ${pos.toFixed(1)}% ${(pos + w * .55).toFixed(1)}%`, `var(--sheet) ${(pos + w * .55).toFixed(1)}% ${(pos + w).toFixed(1)}%`);
+            pos += w;
+        }
+        return `linear-gradient(90deg, ${stops.join(',')})`;
+    }
+    for (let i = 0; i < N; i++) {
+        const c = document.createElement('div');
+        c.className = 'chunk';
+        c.innerHTML = `<span class="txt"></span><span class="vec" style="background:${barcode(i + 3)}"></span>`;
+        bench.appendChild(c); chunks.push(c);
+        const row = document.createElement('div');
+        row.className = 'drow';
+        row.innerHTML = `<span>${i + 1}</span><span>${Math.floor(i / 2) + 1}</span>`;
+        drawer.appendChild(row); rows.push(row);
+    }
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const clamp01 = t => Math.min(1, Math.max(0, t));
+    const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    const seg = (p, a, b) => ease(clamp01((p - a) / (b - a)));
+
+    function layout(p) {
+        const B = bench.getBoundingClientRect();
+        const P = page.getBoundingClientRect();
+        const D = drawer.getBoundingClientRect();
+        const pg = { x: P.left - B.left, y: P.top - B.top, w: P.width, h: P.height };
+        const dr = { x: D.left - B.left, y: D.top - B.top, w: D.width, h: D.height };
+        const stripH = pg.h / N;
+
+        const tCut = clamp01((p - .1) / .2);  // 2a: la cuchilla baja por la página (lineal)
+        const tFan = seg(p, .3, .4);          // 2b: las tiras se separan en abanico
+        const tVec = seg(p, .44, .62);        // 3: se vuelven vectores
+        const tFile = seg(p, .68, .9);        // 4: entran al cajón
+        steps.forEach((li, i) => li.classList.toggle('on', i === (p < .1 ? 0 : p < .42 ? 1 : p < .66 ? 2 : 3)));
+
+        page.style.opacity = p > .09 ? 0 : 1;
+        blade.style.opacity = (p > .09 && p < .31) ? 1 : 0;
+        blade.style.left = (pg.x - 30) + 'px';
+        blade.style.width = (pg.w + 60) + 'px';
+        blade.style.top = (pg.y + tCut * pg.h - 2).toFixed(0) + 'px';
+        drawer.style.opacity = tFile > 0 ? Math.min(1, tFile * 3) : (tVec > .6 ? (tVec - .6) * 2.5 : 0);
+        drawer.style.transform = `translateY(${lerp(30, 0, Math.min(1, tVec + tFile))}px)`;
+
+        chunks.forEach((c, i) => {
+            // A: dentro de la página; cuando la cuchilla pasa por debajo de la tira, esta se separa un poco
+            const passed = clamp01(tCut * N - i);
+            const A = { x: pg.x + passed * (i % 2 ? 6 : -6), y: pg.y + i * stripH + passed * i * 7, w: pg.w, h: stripH, r: passed * (i % 2 ? 1.2 : -1.2) };
+            // B: separadas en abanico a la derecha
+            const Bx = { x: pg.x + pg.w + 40 + (i % 2) * 24, y: pg.y + i * (stripH + 12) - 10, w: pg.w * 1.05, h: stripH * .9, r: (i - 2.5) * 3 };
+            // C: vectores (tiras largas y delgadas)
+            const C = { x: pg.x + pg.w * .55, y: pg.y + 20 + i * 36, w: B.width * .5, h: 24, r: 0 };
+            // D: filas de la tabla en el cajón
+            const colW = window.innerWidth <= 900 ? 98 : 130;
+            const Dd = { x: dr.x + colW, y: dr.y + 40 + i * ((dr.h - 50) / N), w: dr.w - colW - 12, h: Math.min(26, (dr.h - 60) / N), r: 0 };
+            let s;
+            if (tVec <= 0) s = mix(A, Bx, tFan);
+            else if (tFile <= 0) s = mix(Bx, C, tVec);
+            else s = mix(C, Dd, tFile);
+            c.style.width = s.w.toFixed(1) + 'px';
+            c.style.height = s.h.toFixed(1) + 'px';
+            c.style.transform = `translate(${s.x.toFixed(1)}px, ${s.y.toFixed(1)}px) rotate(${s.r.toFixed(2)}deg)`;
+            c.style.opacity = p > .09 ? 1 : 0;
+            rows[i].style.top = (Dd.y - dr.y).toFixed(1) + 'px';
+            rows[i].style.height = Dd.h.toFixed(1) + 'px';
+            rows[i].style.opacity = tFile > .85 ? (tFile - .85) / .15 : 0;
+            c.querySelector('.vec').style.opacity = tVec;
+            c.querySelector('.txt').style.opacity = 1 - tVec;
+            c.style.boxShadow = tCut > 0 && tVec < 1 ? `${(4 * tCut).toFixed(1)}px ${(4 * tCut).toFixed(1)}px 0 var(--yel)` : 'none';
+        });
+    }
+    function mix(a, b, t) { return { x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t), w: lerp(a.w, b.w, t), h: lerp(a.h, b.h, t), r: lerp(a.r, b.r, t) }; }
+
+    let ticking = false;
+    function onScroll() {
+        if (ticking) return; ticking = true;
+        requestAnimationFrame(() => {
+            ticking = false;
+            const r = cutter.getBoundingClientRect();
+            const total = r.height - window.innerHeight;
+            const p = reduce ? 1 : clamp01(-r.top / total);
+            layout(p);
+        });
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    onScroll();
+
+    // ══════════════ TALLERES: cada escena muestra cómo marca su respuesta ══════════════
+    const fmt = t => `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
+
+    // Imprenta: resaltador sobre el párrafo y subrayado de las palabras clave
+    const galley = document.getElementById('galley');
+    function runPdf() {
+        galley.classList.remove('marked');
+        void galley.offsetWidth;
+        galley.classList.add('marked');
+    }
+
+    // Moviola: tira de película, cabezal, código de tiempo y fotograma
+    const VDUR = 150;
+    const strip = document.getElementById('strip'), head = document.getElementById('head');
+    const tc = document.getElementById('tc'), net = document.getElementById('net');
+    const trVideo = [...document.querySelectorAll('#tr-video button')];
+    function seekVideo(t) {
+        head.style.left = `${(t / VDUR) * 100}%`;
+        tc.textContent = fmt(t);
+        net.dataset.state = (t >= 70 && t < 100) ? 'fail' : 'ok';
+        trVideo.forEach(b => b.classList.toggle('now', +b.dataset.t === t));
+    }
+    function runVideo() {
+        strip.classList.add('on');
+        trVideo.forEach(b => b.classList.toggle('cited', b.hasAttribute('data-cite')));
+        seekVideo(72);
+    }
+    trVideo.forEach(b => b.addEventListener('click', () => seekVideo(+b.dataset.t)));
+    strip.addEventListener('click', e => {
+        const r = strip.getBoundingClientRect();
+        seekVideo(Math.round(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)) * VDUR));
+    });
+
+    // Mesa de luz: lápiz rojo alrededor del precio y lupa que sigue al cursor
+    const slide = document.getElementById('slide'), loupe = document.getElementById('loupe');
+    const menuSvg = document.getElementById('menu-svg');
+    const clone = menuSvg.cloneNode(true);
+    clone.removeAttribute('id'); clone.setAttribute('aria-hidden', 'true');
+    loupe.appendChild(clone);
+    function runImage() {
+        slide.classList.remove('marked');
+        void slide.offsetWidth;
+        slide.classList.add('marked');
+    }
+    const ZOOM = 2.4;
+    slide.addEventListener('pointermove', e => {
+        if (e.pointerType === 'touch') return;
+        const r = menuSvg.getBoundingClientRect(), sr = slide.getBoundingClientRect();
+        const x = e.clientX - r.left, y = e.clientY - r.top;
+        if (x < 0 || y < 0 || x > r.width || y > r.height) { loupe.classList.remove('on'); return; }
+        const size = loupe.offsetWidth;
+        loupe.style.left = `${x + (r.left - sr.left) - size / 2}px`;
+        loupe.style.top = `${y + (r.top - sr.top) - size / 2}px`;
+        clone.style.width = `${r.width * ZOOM}px`;
+        clone.style.height = `${r.height * ZOOM}px`;
+        clone.style.transform = `translate(${-(x * ZOOM - size / 2)}px, ${-(y * ZOOM - size / 2)}px)`;
+        loupe.classList.add('on');
+    });
+    slide.addEventListener('pointerleave', () => loupe.classList.remove('on'));
+
+    // Estudio de radio: dial con aguja, ecualizador y sintonía
+    const ADUR = 300;
+    const radio = document.getElementById('radio'), dial = document.getElementById('dial');
+    const needle = document.getElementById('needle'), knob = document.getElementById('knob');
+    const trAudio = [...document.querySelectorAll('#tr-audio button')];
+    const eq = radio.querySelector('.eqbars');
+    for (let k = 0; k < 28; k++) { const b = document.createElement('i'); b.style.setProperty('--k', (k * 7) % 11); eq.appendChild(b); }
+    for (let t = 0; t <= ADUR; t += 60) {
+        const tk = document.createElement('span');
+        tk.className = 'tick'; tk.style.left = `${2 + (t / ADUR) * 96}%`;
+        tk.innerHTML = `<em>${fmt(t)}</em>`;
+        dial.appendChild(tk);
+    }
+    const aseg = document.createElement('span');
+    aseg.className = 'seg'; aseg.style.left = `${2 + (220 / ADUR) * 96}%`; aseg.style.width = `${(30 / ADUR) * 96}%`;
+    dial.appendChild(aseg);
+    let playTimer = 0;
+    function play(ms) {
+        if (reduce) return;
+        radio.classList.add('playing');
+        clearTimeout(playTimer);
+        playTimer = setTimeout(() => radio.classList.remove('playing'), ms);
+    }
+    function setNeedle(t) {
+        needle.style.left = `${2 + (t / ADUR) * 96}%`;
+        knob.value = t;
+        let cur = trAudio[0];
+        trAudio.forEach(b => { if (+b.dataset.t <= t) cur = b; });
+        trAudio.forEach(b => b.classList.toggle('now', b === cur));
+    }
+    function runAudio() {
+        dial.classList.add('on');
+        trAudio.forEach(b => b.classList.toggle('cited', b.hasAttribute('data-cite')));
+        setNeedle(220);
+        play(6000);
+    }
+    knob.addEventListener('input', () => { setNeedle(+knob.value); play(1500); });
+    trAudio.forEach(b => b.addEventListener('click', () => { setNeedle(+b.dataset.t); play(2500); }));
+    dial.addEventListener('click', e => {
+        const r = dial.getBoundingClientRect();
+        setNeedle(Math.round(Math.min(1, Math.max(0, ((e.clientX - r.left) / r.width - .02) / .96)) * ADUR));
+        play(1500);
+    });
+
+    const runs = { pdf: runPdf, video: runVideo, image: runImage, audio: runAudio };
+    document.querySelectorAll('[data-run]').forEach(b => b.addEventListener('click', () => runs[b.dataset.run]()));
+
+    // Cada taller muestra su marcado la primera vez que entra en pantalla
+    const seen = new Set();
+    const tio = new IntersectionObserver(entries => entries.forEach(e => {
+        const k = e.target.id.replace('t-', '');
+        if (e.isIntersecting && !seen.has(k)) { seen.add(k); setTimeout(runs[k], 450); }
+    }), { threshold: .45 });
+    ['pdf', 'video', 'image', 'audio'].forEach(k => tio.observe(document.getElementById(`t-${k}`)));
+
+    // Toda la base: cada cita lleva al taller de su archivo y lo marca
+    document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => {
+        const k = b.dataset.go;
+        document.querySelectorAll('.tile').forEach(t => t.classList.toggle('lit', t.dataset.go === k));
+        document.getElementById(`t-${k}`).scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+        seen.add(k);
+        setTimeout(runs[k], reduce ? 0 : 750);
+    }));
+})();
+</script>
+</body>
+</html>

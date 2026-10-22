@@ -1,0 +1,1596 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Archivo Vivo · Panel</title>
+    <meta name="description" content="Archivo Vivo: base de conocimiento con PDFs, audios y videos y consulta semántica.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <!-- Tipografías de las escenas: moviola (video), mesa de luz (imagen) y estudio de radio (audio) -->
+    <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@700;900&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Unbounded:wght@500;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* ══════════════════════════════════════════════════════════════════
+           RESET & DESIGN TOKENS
+           ══════════════════════════════════════════════════════════════════ */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --zinc-950: #09090b; --zinc-900: #18181b; --zinc-850: #1e1e22;
+            --zinc-800: #27272a; --zinc-700: #3f3f46; --zinc-600: #52525b;
+            --zinc-500: #71717a; --zinc-400: #a1a1aa; --zinc-300: #d4d4d8;
+            --zinc-200: #e4e4e7; --zinc-100: #f4f4f5;
+            --emerald-500: #10b981; --emerald-400: #34d399; --emerald-600: #059669;
+            --emerald-900: #064e3b;
+            --indigo-500: #6366f1; --indigo-400: #818cf8; --indigo-600: #4f46e5;
+            --red-500: #ef4444; --red-400: #f87171;
+            --amber-500: #f59e0b; --amber-400: #fbbf24;
+            --cyan-500: #06b6d4; --cyan-400: #22d3ee;
+            --violet-500: #8b5cf6; --violet-400: #a78bfa;
+
+            --sidebar-w: 320px;
+            --chat-w: 420px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--zinc-950);
+            color: var(--zinc-100);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--zinc-700); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--zinc-600); }
+
+        /* ══════════════════════════════════════════════════════════════════
+           LAYOUT – 3 PANEL GRID
+           ══════════════════════════════════════════════════════════════════ */
+        .app-layout {
+            display: grid;
+            grid-template-columns: var(--sidebar-w) 1fr var(--chat-w);
+            height: 100vh;
+        }
+
+        /* ══════════════════════════════════════════════════════════════════
+           PANEL 1 – LEFT SIDEBAR
+           ══════════════════════════════════════════════════════════════════ */
+        .sidebar {
+            background: var(--zinc-900);
+            border-right: 1px solid var(--zinc-800);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* ── User Card ────────────────────────────────────────────────── */
+        .user-card {
+            padding: 20px;
+            border-bottom: 1px solid var(--zinc-800);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .user-avatar {
+            width: 42px; height: 42px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 1rem; color: white;
+            flex-shrink: 0;
+        }
+        .user-info { flex: 1; min-width: 0; }
+        .user-info h3 {
+            font-size: 0.85rem; font-weight: 600;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .user-info p {
+            font-size: 0.72rem; color: var(--zinc-400);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .btn-logout {
+            background: none; border: none; color: var(--zinc-500);
+            cursor: pointer; padding: 6px; border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .btn-logout:hover { color: var(--red-400); background: rgba(239,68,68,0.1); }
+
+        /* ── Upload Zone ──────────────────────────────────────────────── */
+        .upload-section { padding: 16px; }
+        .upload-zone {
+            border: 2px dashed var(--zinc-700);
+            border-radius: 14px;
+            padding: 28px 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: var(--emerald-500);
+            background: rgba(16, 185, 129, 0.05);
+        }
+        .upload-zone.dragover {
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+        }
+        .upload-zone .upload-icon {
+            width: 48px; height: 48px;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 12px;
+        }
+        .upload-zone .upload-icon i { color: var(--emerald-400); }
+        .upload-zone h4 {
+            font-size: 0.85rem; font-weight: 600; margin-bottom: 4px;
+        }
+        .upload-zone p { font-size: 0.72rem; color: var(--zinc-500); }
+        .upload-zone input[type="file"] {
+            position: absolute; inset: 0; opacity: 0; cursor: pointer;
+        }
+
+        /* Upload progress */
+        .upload-progress {
+            display: none;
+            padding: 0 16px 16px;
+        }
+        .upload-progress.active { display: block; }
+        .progress-bar-track {
+            height: 6px; background: var(--zinc-800);
+            border-radius: 3px; overflow: hidden; margin-bottom: 8px;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--emerald-500), var(--cyan-400));
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.3s ease;
+            animation: progressPulse 1.5s ease-in-out infinite;
+        }
+        @keyframes progressPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .progress-text {
+            font-size: 0.72rem; color: var(--zinc-400); text-align: center;
+        }
+
+        /* ── Document List ────────────────────────────────────────────── */
+        .doc-list-header {
+            padding: 16px 20px 8px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .doc-list-header h4 {
+            font-size: 0.75rem; font-weight: 600; color: var(--zinc-400);
+            text-transform: uppercase; letter-spacing: 0.06em;
+        }
+        .doc-list-header .doc-count {
+            font-size: 0.7rem; background: var(--zinc-800);
+            padding: 2px 8px; border-radius: 6px; color: var(--zinc-400);
+        }
+
+        .doc-list {
+            flex: 1; overflow-y: auto; padding: 4px 12px;
+        }
+        .doc-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 12px; border-radius: 10px; cursor: pointer;
+            margin-bottom: 4px;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+        .doc-item:hover { background: var(--zinc-850); }
+        .doc-item.active {
+            background: rgba(16, 185, 129, 0.08);
+            border-color: rgba(16, 185, 129, 0.15);
+        }
+        .doc-item-icon {
+            width: 36px; height: 36px; border-radius: 9px;
+            background: rgba(239, 68, 68, 0.1);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .doc-item-icon i { color: var(--red-400); width: 18px; height: 18px; }
+        .doc-item-info { flex: 1; min-width: 0; }
+        .doc-item-info h5 {
+            font-size: 0.8rem; font-weight: 500;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .doc-item-info p {
+            font-size: 0.68rem; color: var(--zinc-500);
+        }
+        .doc-item-delete {
+            background: none; border: none; color: var(--zinc-600);
+            cursor: pointer; padding: 4px; border-radius: 6px;
+            opacity: 0; transition: all 0.2s;
+        }
+        .doc-item:hover .doc-item-delete { opacity: 1; }
+        .doc-item-delete:hover { color: var(--red-400); background: rgba(239,68,68,0.1); }
+
+        /* ══════════════════════════════════════════════════════════════════
+           PANEL 2 – CENTER VIEWER
+           ══════════════════════════════════════════════════════════════════ */
+        .viewer {
+            background: var(--zinc-950);
+            display: flex; flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ── Top Toolbar ──────────────────────────────────────────────── */
+        .viewer-toolbar {
+            padding: 12px 24px;
+            border-bottom: 1px solid var(--zinc-800);
+            display: flex; align-items: center; gap: 12px;
+            flex-wrap: wrap;
+            background: var(--zinc-900);
+        }
+        .toolbar-title {
+            flex: 1 1 220px; min-width: 180px;
+        }
+        .toolbar-title h3 {
+            font-size: 0.9rem; font-weight: 600;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .toolbar-title p {
+            font-size: 0.72rem; color: var(--zinc-500);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        /* ── Visor PDF real ───────────────────────────────────────────── */
+        .pdf-stage {
+            display: flex; justify-content: center; align-items: flex-start;
+            min-height: 300px; overflow: auto;
+        }
+        .pdf-stage canvas {
+            background: white; border-radius: 6px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.45);
+            max-width: none;
+        }
+        .pdf-status {
+            padding: 40px; text-align: center; color: var(--zinc-400); font-size: 0.85rem;
+        }
+        .source-tag.clickable, .page-link {
+            cursor: pointer; transition: background 0.15s;
+        }
+        .source-tag.clickable:hover { background: rgba(16, 185, 129, 0.2); }
+        .page-link {
+            color: var(--emerald-400); font-weight: 600;
+            border-bottom: 1px dashed rgba(16,185,129,0.5);
+        }
+        .page-link:hover { background: rgba(16, 185, 129, 0.12); }
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--zinc-850);
+            padding: 3px 6px;
+            border-radius: 8px;
+            border: 1px solid var(--zinc-800);
+        }
+        .toolbar-btn {
+            background: transparent; border: none;
+            color: var(--zinc-300); padding: 5px 8px; border-radius: 6px;
+            cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 4px;
+            font-family: inherit; font-size: 0.75rem;
+        }
+        .toolbar-btn:hover { background: var(--zinc-700); color: white; }
+        .toolbar-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .toolbar-btn i { width: 15px; height: 15px; }
+        .toolbar-select {
+            background: var(--zinc-800);
+            border: 1px solid var(--zinc-700);
+            color: var(--zinc-200);
+            font-size: 0.72rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+            outline: none;
+            font-family: inherit;
+        }
+        .toolbar-badge {
+            font-size: 0.72rem;
+            color: var(--zinc-400);
+            padding: 2px 6px;
+            font-weight: 500;
+        }
+
+        /* ── View Switcher Tabs ────────────────────────────────────────── */
+        .viewer-tabs {
+            display: flex;
+            gap: 4px;
+            padding: 8px 24px;
+            background: var(--zinc-900);
+            border-bottom: 1px solid var(--zinc-800);
+        }
+        .vtab-btn {
+            padding: 6px 14px;
+            background: transparent;
+            border: none;
+            color: var(--zinc-400);
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .vtab-btn:hover { color: var(--zinc-200); background: var(--zinc-800); }
+        .vtab-btn.active {
+            color: var(--emerald-400);
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        .vtab-btn i { width: 14px; height: 14px; }
+
+        /* ── Interactive Multimedia Video Player in Welcome ──────────── */
+        .video-demo-card {
+            background: var(--zinc-900);
+            border: 1px solid var(--zinc-800);
+            border-radius: 18px;
+            overflow: hidden;
+            margin: 24px 0;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+            text-align: left;
+        }
+        .video-demo-header {
+            padding: 12px 18px;
+            background: var(--zinc-850);
+            border-bottom: 1px solid var(--zinc-800);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .video-demo-header-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--zinc-300);
+        }
+        .video-demo-screen {
+            position: relative;
+            background: radial-gradient(circle at center, #1c1917 0%, #09090b 100%);
+            aspect-ratio: 16 / 9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-bottom: 1px solid var(--zinc-800);
+        }
+        .video-demo-preview {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            position: relative;
+        }
+        .video-play-btn {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--emerald-500), var(--emerald-600));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.4);
+            transition: all 0.25s;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            z-index: 5;
+        }
+        .video-play-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 40px rgba(16, 185, 129, 0.6);
+        }
+        .video-play-btn i { color: white; width: 28px; height: 28px; margin-left: 3px; }
+        .video-controls-bar {
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--zinc-900);
+        }
+        .video-progress-track {
+            flex: 1;
+            height: 4px;
+            background: var(--zinc-800);
+            border-radius: 2px;
+            position: relative;
+            cursor: pointer;
+        }
+        .video-progress-thumb {
+            height: 100%;
+            width: 35%;
+            background: var(--emerald-500);
+            border-radius: 2px;
+            position: relative;
+        }
+        .video-time {
+            font-size: 0.7rem;
+            color: var(--zinc-500);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .video-tour-tabs {
+            display: flex;
+            border-top: 1px solid var(--zinc-800);
+            background: var(--zinc-850);
+        }
+        .video-tour-tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            font-size: 0.72rem;
+            color: var(--zinc-400);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .video-tour-tab:hover { color: var(--zinc-200); }
+        .video-tour-tab.active {
+            color: var(--emerald-400);
+            border-color: var(--emerald-500);
+            background: rgba(16, 185, 129, 0.05);
+            font-weight: 600;
+        }
+
+        /* ── Welcome / Empty State ────────────────────────────────────── */
+        .viewer-welcome {
+            flex: 1; display: flex; align-items: center; justify-content: center;
+            padding: 40px;
+        }
+        .welcome-content {
+            max-width: 600px; text-align: center;
+        }
+        .welcome-icon {
+            width: 88px; height: 88px;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(99, 102, 241, 0.15));
+            border: 1px solid rgba(16, 185, 129, 0.1);
+            border-radius: 24px;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 24px;
+        }
+        .welcome-icon i { color: var(--emerald-400); width: 40px; height: 40px; }
+        .welcome-content h2 {
+            font-size: 1.6rem; font-weight: 700; margin-bottom: 12px;
+            letter-spacing: -0.02em;
+        }
+        .welcome-content h2 span {
+            background: linear-gradient(135deg, var(--emerald-400), var(--indigo-400));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .welcome-content p {
+            color: var(--zinc-400); font-size: 0.92rem; line-height: 1.6; margin-bottom: 32px;
+        }
+
+        /* Welcome Feature Grid */
+        .welcome-features {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: left;
+        }
+        .wf-card {
+            padding: 16px; background: var(--zinc-900);
+            border: 1px solid var(--zinc-800); border-radius: 14px;
+            transition: all 0.3s ease;
+        }
+        .wf-card:hover { border-color: var(--zinc-700); transform: translateY(-2px); }
+        .wf-card .wf-icon {
+            width: 36px; height: 36px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 10px;
+        }
+        .wf-card .wf-icon i { width: 18px; height: 18px; }
+        .wf-card h4 { font-size: 0.82rem; font-weight: 600; margin-bottom: 4px; }
+        .wf-card p { font-size: 0.72rem; color: var(--zinc-500); line-height: 1.5; }
+
+        /* ── Document View (Stats + Summary) ──────────────────────────── */
+        .viewer-document {
+            flex: 1; overflow-y: auto; padding: 24px;
+            display: none;
+        }
+        .viewer-document.active { display: block; }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--zinc-900);
+            border: 1px solid var(--zinc-800);
+            border-radius: 14px; padding: 16px;
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover { border-color: var(--zinc-700); transform: translateY(-2px); }
+        .stat-card .stat-icon {
+            width: 36px; height: 36px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 10px;
+        }
+        .stat-card .stat-icon i { width: 18px; height: 18px; }
+        .stat-card .stat-value {
+            font-size: 1.4rem; font-weight: 700; margin-bottom: 2px;
+        }
+        .stat-card .stat-label {
+            font-size: 0.7rem; color: var(--zinc-500); text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        /* Summary Card */
+        .summary-card {
+            background: var(--zinc-900);
+            border: 1px solid var(--zinc-800);
+            border-radius: 14px; padding: 24px;
+            margin-bottom: 20px;
+        }
+        .summary-card h3 {
+            font-size: 0.95rem; font-weight: 600; margin-bottom: 12px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .summary-card h3 i { width: 18px; height: 18px; color: var(--emerald-400); }
+        .summary-card p {
+            font-size: 0.87rem; color: var(--zinc-300); line-height: 1.7;
+        }
+
+        /* Key Concepts */
+        .concepts-section {
+            margin-bottom: 20px;
+        }
+        .concepts-section h3 {
+            font-size: 0.95rem; font-weight: 600; margin-bottom: 12px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .concepts-section h3 i { width: 18px; height: 18px; color: var(--indigo-400); }
+        .concept-tags {
+            display: flex; flex-wrap: wrap; gap: 8px;
+        }
+        .concept-tag {
+            padding: 6px 14px;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.15);
+            border-radius: 20px;
+            font-size: 0.78rem; font-weight: 500; color: var(--indigo-400);
+            transition: all 0.2s;
+        }
+        .concept-tag:hover { background: rgba(99, 102, 241, 0.15); }
+
+        /* Complexity Badge */
+        .complexity-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+        }
+        .complexity-badge i { width: 14px; height: 14px; }
+        .complexity-basico { background: rgba(34,211,238,0.1); color: var(--cyan-400); border: 1px solid rgba(34,211,238,0.15); }
+        .complexity-intermedio { background: rgba(251,191,36,0.1); color: var(--amber-400); border: 1px solid rgba(251,191,36,0.15); }
+        .complexity-avanzado { background: rgba(167,139,250,0.1); color: var(--violet-400); border: 1px solid rgba(167,139,250,0.15); }
+        .complexity-experto { background: rgba(248,113,113,0.1); color: var(--red-400); border: 1px solid rgba(248,113,113,0.15); }
+
+        /* ══════════════════════════════════════════════════════════════════
+           PANEL 3 – CHAT
+           ══════════════════════════════════════════════════════════════════ */
+        .chat-panel {
+            background: var(--zinc-900);
+            border-left: 1px solid var(--zinc-800);
+            display: flex; flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* ── Chat Header ──────────────────────────────────────────────── */
+        .chat-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--zinc-800);
+            display: flex; align-items: center; gap: 12px;
+        }
+        .chat-header-icon {
+            width: 38px; height: 38px; border-radius: 10px;
+            background: linear-gradient(135deg, var(--emerald-500), var(--indigo-500));
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .chat-header-icon i { color: white; width: 20px; height: 20px; }
+        .chat-header-info { flex: 1; }
+        .chat-header-info h3 { font-size: 0.88rem; font-weight: 600; }
+        .chat-header-info p { font-size: 0.7rem; color: var(--zinc-500); }
+        .chat-clear-btn {
+            background: none; border: none; color: var(--zinc-500);
+            cursor: pointer; padding: 6px; border-radius: 8px; transition: all 0.2s;
+        }
+        .chat-clear-btn:hover { color: var(--red-400); background: rgba(239,68,68,0.1); }
+
+        /* ── Chat Messages ────────────────────────────────────────────── */
+        .chat-messages {
+            flex: 1; overflow-y: auto; padding: 16px;
+            display: flex; flex-direction: column; gap: 16px;
+        }
+
+        /* Empty chat state */
+        .chat-empty {
+            flex: 1; display: flex; align-items: center; justify-content: center;
+            flex-direction: column; text-align: center; padding: 40px 20px;
+        }
+        .chat-empty-icon {
+            width: 64px; height: 64px; border-radius: 18px;
+            background: rgba(16,185,129,0.08);
+            border: 1px solid rgba(16,185,129,0.1);
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 16px;
+        }
+        .chat-empty-icon i { color: var(--emerald-400); width: 28px; height: 28px; }
+        .chat-empty h4 { font-size: 0.92rem; font-weight: 600; margin-bottom: 6px; }
+        .chat-empty p { font-size: 0.78rem; color: var(--zinc-500); line-height: 1.5; }
+
+        /* Message Bubbles */
+        .msg {
+            display: flex; gap: 10px;
+            animation: msgIn 0.35s ease;
+        }
+        @keyframes msgIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .msg-avatar {
+            width: 32px; height: 32px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; font-size: 0.7rem; font-weight: 700;
+        }
+        .msg-user .msg-avatar {
+            color: white;
+        }
+        .msg-assistant .msg-avatar {
+            background: linear-gradient(135deg, var(--emerald-500), var(--indigo-500));
+            color: white;
+        }
+        .msg-assistant .msg-avatar i { width: 16px; height: 16px; }
+        .msg-body { flex: 1; min-width: 0; }
+        .msg-bubble {
+            padding: 12px 16px;
+            border-radius: 14px;
+            font-size: 0.85rem;
+            line-height: 1.65;
+        }
+        .msg-user .msg-bubble {
+            background: rgba(99, 102, 241, 0.12);
+            border: 1px solid rgba(99, 102, 241, 0.15);
+            border-top-right-radius: 4px;
+        }
+        .msg-assistant .msg-bubble {
+            background: var(--zinc-850);
+            border: 1px solid var(--zinc-800);
+            border-top-left-radius: 4px;
+        }
+
+        /* Markdown rendered content inside assistant bubbles */
+        .msg-bubble h1, .msg-bubble h2, .msg-bubble h3, .msg-bubble h4 {
+            margin-top: 12px; margin-bottom: 6px;
+        }
+        .msg-bubble h2 { font-size: 1rem; }
+        .msg-bubble h3 { font-size: 0.92rem; }
+        .msg-bubble ul, .msg-bubble ol {
+            padding-left: 20px; margin: 8px 0;
+        }
+        .msg-bubble li { margin-bottom: 4px; }
+        .msg-bubble p { margin-bottom: 8px; }
+        .msg-bubble p:last-child { margin-bottom: 0; }
+        .msg-bubble strong { color: var(--emerald-400); }
+        .msg-bubble code {
+            background: rgba(0,0,0,0.3);
+            padding: 2px 6px; border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+        .msg-bubble pre {
+            background: rgba(0,0,0,0.4);
+            padding: 14px; border-radius: 8px;
+            overflow-x: auto; margin: 10px 0;
+            border: 1px solid var(--zinc-800);
+        }
+        .msg-bubble pre code {
+            background: none; padding: 0;
+            font-size: 0.78rem;
+        }
+        .msg-bubble table {
+            width: 100%; border-collapse: collapse; margin: 10px 0;
+            font-size: 0.8rem;
+        }
+        .msg-bubble th, .msg-bubble td {
+            padding: 8px 12px; border: 1px solid var(--zinc-700);
+            text-align: left;
+        }
+        .msg-bubble th {
+            background: var(--zinc-800); font-weight: 600;
+        }
+        .msg-bubble blockquote {
+            border-left: 3px solid var(--emerald-500);
+            padding-left: 14px; margin: 10px 0;
+            color: var(--zinc-400); font-style: italic;
+        }
+
+        /* Source tags */
+        .msg-sources {
+            display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+        }
+        .source-tag {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 3px 10px;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.12);
+            border-radius: 6px;
+            font-size: 0.68rem; color: var(--emerald-400); font-weight: 500;
+        }
+        .source-tag i { width: 12px; height: 12px; }
+
+        /* Thinking indicator */
+        .msg-thinking {
+            display: flex; gap: 10px; padding: 0 4px;
+            animation: msgIn 0.3s ease;
+        }
+        .thinking-dots {
+            display: flex; gap: 4px; padding: 14px 20px;
+            background: var(--zinc-850); border: 1px solid var(--zinc-800);
+            border-radius: 14px; border-top-left-radius: 4px;
+        }
+        .thinking-dots span {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: var(--emerald-400);
+            animation: blink 1.4s infinite both;
+        }
+        .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes blink {
+            0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+            40% { opacity: 1; transform: scale(1); }
+        }
+
+        /* ── Suggestion Chips ─────────────────────────────────────────── */
+        .suggestion-chips {
+            padding: 8px 16px;
+            display: flex; flex-wrap: wrap; gap: 6px;
+            border-top: 1px solid var(--zinc-800);
+        }
+        .chip {
+            padding: 6px 14px;
+            background: var(--zinc-850);
+            border: 1px solid var(--zinc-800);
+            border-radius: 20px;
+            font-size: 0.72rem; font-weight: 500;
+            color: var(--zinc-300);
+            cursor: pointer; transition: all 0.2s;
+            font-family: inherit;
+            white-space: nowrap;
+        }
+        .chip:hover {
+            border-color: var(--emerald-500);
+            color: var(--emerald-400);
+            background: rgba(16, 185, 129, 0.05);
+        }
+        .chip i { width: 13px; height: 13px; margin-right: 4px; vertical-align: -2px; }
+
+        /* ── Chat Input ───────────────────────────────────────────────── */
+        .chat-input-area {
+            padding: 12px 16px 16px;
+            border-top: 1px solid var(--zinc-800);
+        }
+        .chat-input-wrapper {
+            display: flex; align-items: flex-end; gap: 8px;
+            background: var(--zinc-850);
+            border: 1px solid var(--zinc-800);
+            border-radius: 14px;
+            padding: 4px;
+            transition: border-color 0.2s;
+        }
+        .chat-input-wrapper:focus-within {
+            border-color: var(--emerald-500);
+            box-shadow: 0 0 0 3px rgba(16,185,129,0.08);
+        }
+        .chat-input-wrapper textarea {
+            flex: 1; background: none; border: none; outline: none;
+            color: var(--zinc-100); font-family: inherit; font-size: 0.85rem;
+            padding: 10px 12px; resize: none;
+            max-height: 120px; line-height: 1.5;
+        }
+        .chat-input-wrapper textarea::placeholder { color: var(--zinc-600); }
+        .btn-send {
+            width: 40px; height: 40px; border: none;
+            background: linear-gradient(135deg, var(--emerald-500), var(--emerald-600));
+            border-radius: 10px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s; flex-shrink: 0;
+        }
+        .btn-send:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
+        .btn-send:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+        .btn-send i { color: white; width: 18px; height: 18px; }
+
+        /* ── Chat disabled state ──────────────────────────────────────── */
+        .chat-disabled {
+            flex: 1; display: flex; align-items: center; justify-content: center;
+            text-align: center; padding: 40px;
+        }
+        .chat-disabled p {
+            color: var(--zinc-500); font-size: 0.85rem;
+        }
+
+        /* ══════════════════════════════════════════════════════════════════
+           RESPONSIVE
+           ══════════════════════════════════════════════════════════════════ */
+        @media (max-width: 1200px) {
+            :root { --chat-w: 360px; --sidebar-w: 280px; }
+        }
+        @media (max-width: 900px) {
+            .app-layout {
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                position: fixed; left: -100%; top: 0; bottom: 0;
+                width: 300px; z-index: 100;
+                transition: left 0.3s ease;
+            }
+            .sidebar.open { left: 0; }
+            .chat-panel {
+                position: fixed; right: -100%; top: 0; bottom: 0;
+                width: 100%; z-index: 100;
+                transition: right 0.3s ease;
+            }
+            .chat-panel.open { right: 0; }
+            .mobile-nav {
+                display: flex !important;
+            }
+        }
+
+        /* ── Mobile Nav (hidden on desktop) ───────────────────────────── */
+        .mobile-nav {
+            display: none;
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: var(--zinc-900);
+            border-top: 1px solid var(--zinc-800);
+            padding: 8px 16px; z-index: 50;
+            justify-content: space-around;
+        }
+        .mobile-nav button {
+            background: none; border: none; color: var(--zinc-400);
+            padding: 8px 16px; border-radius: 8px; cursor: pointer;
+            font-family: inherit; font-size: 0.72rem;
+            display: flex; flex-direction: column; align-items: center; gap: 2px;
+        }
+        .mobile-nav button:hover { color: var(--emerald-400); }
+        .mobile-nav button i { width: 20px; height: 20px; }
+
+        /* ── Mermaid Container Styles ─────────────────────────────────── */
+        .mermaid {
+            background: var(--zinc-900) !important;
+            border: 1px solid var(--zinc-800);
+            border-radius: 10px;
+            padding: 16px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: center;
+        }
+        .mermaid svg {
+            max-width: 100%;
+        }
+
+        /* ── Overlay for mobile ───────────────────────────────────────── */
+        .overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 90;
+        }
+        .overlay.active { display: block; }
+
+        /* ── Toast Notifications ──────────────────────────────────────── */
+        .toast-container {
+            position: fixed; top: 20px; right: 20px;
+            z-index: 9999; display: flex; flex-direction: column; gap: 8px;
+            max-width: 420px; width: calc(100% - 40px);
+            pointer-events: none;
+        }
+        .toast {
+            pointer-events: auto;
+            padding: 12px 18px;
+            border-radius: 12px;
+            font-size: 0.82rem;
+            display: flex; align-items: flex-start; gap: 10px;
+            animation: toastIn 0.3s ease;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+            backdrop-filter: blur(16px);
+            word-break: break-word;
+            line-height: 1.45;
+        }
+        .toast-success {
+            background: rgba(16,185,129,0.2);
+            border: 1px solid rgba(16,185,129,0.35);
+            color: #6ee7b7;
+        }
+        .toast-error {
+            background: rgba(239,68,68,0.2);
+            border: 1px solid rgba(239,68,68,0.35);
+            color: #fca5a5;
+        }
+        .toast i { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+    </style>
+    <!-- Capa visual "prueba de imprenta" (misma estética que la landing). Quitar esta línea devuelve el tema oscuro original. -->
+    <link rel="stylesheet" href="assets/css/tema-imprenta.css">
+    <!-- Escenas: la interfaz cambia según el tipo de archivo con el que se conversa -->
+    <link rel="stylesheet" href="assets/css/escenas.css">
+</head>
+<body data-scene="kb">
+    <div class="scene-curtain" id="scene-curtain" aria-hidden="true"><b></b><span></span></div>
+    <div class="slug-rail" aria-hidden="true"><span>Archivo Vivo<i>✂</i>PDFs · imágenes · audios · videos<i>✂</i>EmbeddingGemma 2 + llama.cpp<i>✂</i>respuestas con la página o el minuto exacto<i>✂</i>PostgreSQL + pgvector<i>✂</i>Archivo Vivo<i>✂</i>PDFs · imágenes · audios · videos<i>✂</i>EmbeddingGemma 2 + llama.cpp<i>✂</i>respuestas con la página o el minuto exacto<i>✂</i>PostgreSQL + pgvector<i>✂</i></span></div>
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Mobile Overlay -->
+    <div class="overlay" id="overlay" onclick="closeMobilePanels()"></div>
+
+    <!-- ═══════════════ APP LAYOUT ═══════════════ -->
+    <div class="app-layout">
+
+        <!-- ══════════ PANEL 1: SIDEBAR ══════════ -->
+        <aside class="sidebar" id="sidebar">
+            <!-- User Card -->
+            <div class="user-card">
+                <div class="user-avatar" id="user-avatar">U</div>
+                <div class="user-info">
+                    <h3 id="user-display-name">Usuario</h3>
+                    <p id="user-email">usuario@email.com</p>
+                </div>
+                <button class="btn-logout" onclick="logout()" title="Cerrar sesión">
+                    <i data-lucide="log-out" style="width:18px;height:18px;"></i>
+                </button>
+            </div>
+
+            <!-- Admin Navigation Toggle (Visible only to Admins) -->
+            <div id="admin-nav-bar" style="display:none; padding:12px 16px; border-bottom:1px solid var(--zinc-800); background:linear-gradient(135deg, rgba(99,102,241,0.06), rgba(139,92,246,0.06));">
+                <button id="btn-toggle-admin-view" onclick="toggleAdminPanel()" style="width:100%; display:flex; align-items:center; justify-content:space-between; padding:9px 12px; background:linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2)); border:1px solid rgba(99,102,241,0.35); border-radius:10px; color:var(--ink); font-size:0.8rem; font-weight:600; cursor:pointer; transition:all 0.25s ease;" onmouseover="this.style.boxShadow='0 4px 14px rgba(99,102,241,0.3)'" onmouseout="this.style.boxShadow='none'">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <i data-lucide="shield" style="width:16px;height:16px; color:var(--cyan-ink);"></i>
+                        <span id="admin-toggle-label">Gestión de Usuarios</span>
+                    </div>
+                    <span style="background:#4f46e5; color:white; font-size:0.65rem; font-weight:800; padding:2px 7px; border-radius:8px; letter-spacing:0.04em;">ADMIN</span>
+                </button>
+            </div>
+
+            <!-- Upload Zone -->
+            <div class="upload-section">
+                <div class="upload-zone" id="upload-zone">
+                    <input type="file" accept=".pdf,image/*,.jpg,.jpeg,.png,.webp,.bmp,.gif,audio/*,video/*,.mp3,.wav,.m4a,.ogg,.flac,.aac,.opus,.mp4,.mov,.mkv,.webm,.avi,.m4v" id="file-input" onchange="handleFileSelect(event)">
+                    <div class="upload-icon">
+                        <i data-lucide="upload-cloud" style="width:24px;height:24px;"></i>
+                    </div>
+                    <h4>Agregar a la base</h4>
+                    <p>PDF (máx. 10 hojas) · imagen · audio o video corto (máx. 20 min)</p>
+                </div>
+            </div>
+
+            <!-- Upload Progress -->
+            <div class="upload-progress" id="upload-progress">
+                <div class="progress-bar-track">
+                    <div class="progress-bar-fill" id="progress-fill"></div>
+                </div>
+                <p class="progress-text" id="progress-text">Procesando archivo...</p>
+            </div>
+
+            <!-- Carpeta base_conocimiento/ -->
+            <div class="kb-folder">
+                <button class="kb-sync-btn" id="btn-sync-folder" onclick="syncFolder()" title="Indexa los archivos copiados en la carpeta base_conocimiento del proyecto">
+                    <i data-lucide="folder-sync"></i> Indexar carpeta
+                </button>
+                <div class="kb-sync-status" id="kb-sync-status" style="display:none;"></div>
+            </div>
+
+            <!-- Document List -->
+            <div class="doc-list-header">
+                <h4>Base de conocimiento</h4>
+                <span class="doc-count" id="doc-count">0</span>
+            </div>
+            <div class="doc-list" id="doc-list">
+                <!-- Documents rendered dynamically -->
+            </div>
+        </aside>
+
+        <!-- ══════════ PANEL 2: VIEWER ══════════ -->
+        <main class="viewer" id="viewer">
+            <!-- Toolbar -->
+            <div class="viewer-toolbar" id="viewer-toolbar" style="display:none;">
+                <div class="toolbar-title">
+                    <h3 id="toolbar-doc-name">Documento</h3>
+                    <p id="toolbar-doc-meta">0 páginas · 0 fragmentos</p>
+                </div>
+
+                <!-- Paginator & Zoom & Chapters Controls -->
+                <div class="toolbar-group pdf-only">
+                    <button class="toolbar-btn" id="btn-prev-page" onclick="prevDocPage()" title="Página anterior">
+                        <i data-lucide="chevron-left"></i>
+                    </button>
+                    <span class="toolbar-badge" id="toolbar-page-indicator">Pág. 1 / 1</span>
+                    <button class="toolbar-btn" id="btn-next-page" onclick="nextDocPage()" title="Página siguiente">
+                        <i data-lucide="chevron-right"></i>
+                    </button>
+                </div>
+
+                <div class="toolbar-group pdf-only">
+                    <button class="toolbar-btn" onclick="zoomDoc(-10)" title="Reducir zoom">
+                        <i data-lucide="zoom-out"></i>
+                    </button>
+                    <span class="toolbar-badge" id="toolbar-zoom-indicator">100%</span>
+                    <button class="toolbar-btn" onclick="zoomDoc(10)" title="Aumentar zoom">
+                        <i data-lucide="zoom-in"></i>
+                    </button>
+                    <button class="toolbar-btn" onclick="resetDocZoom()" title="Restablecer zoom">
+                        <i data-lucide="rotate-ccw"></i>
+                    </button>
+                </div>
+
+                <div class="toolbar-group pdf-only">
+                    <i data-lucide="bookmark" style="width:14px;height:14px;color:var(--zinc-500);margin-left:4px;"></i>
+                    <select class="toolbar-select" id="toolbar-page-select" onchange="goToDocPage(parseInt(this.value, 10))" title="Ir a página">
+                        <option value="1">Página 1</option>
+                    </select>
+                </div>
+
+                <span class="complexity-badge" id="toolbar-complexity" style="display:none;"></span>
+            </div>
+
+            <!-- View Switcher Tabs -->
+            <div class="viewer-tabs" id="viewer-tabs" style="display:none;">
+                <button class="vtab-btn" id="vtab-pdf" onclick="switchViewerTab('pdf')">
+                    <i data-lucide="file-text"></i> <span id="vtab-pdf-label">Documento</span>
+                </button>
+                <button class="vtab-btn active" id="vtab-summary" onclick="switchViewerTab('summary')">
+                    <i data-lucide="sparkles"></i> Resumen Cognitivo
+                </button>
+                <button class="vtab-btn" id="vtab-diagram" onclick="switchViewerTab('diagram')">
+                    <i data-lucide="network"></i> Mapa & Diagrama de Flujo
+                </button>
+                <button class="vtab-btn" id="vtab-chunks" onclick="switchViewerTab('chunks')">
+                    <i data-lucide="layers"></i> Explorador de Fragmentos
+                </button>
+            </div>
+
+            <!-- Welcome State -->
+            <div class="viewer-welcome" id="viewer-welcome">
+                <div class="welcome-content" style="max-width:760px;">
+                    <div class="welcome-icon">
+                        <i data-lucide="book-open-text"></i>
+                    </div>
+                    <h2>Archivo <span>Vivo</span></h2>
+                    <p>
+                        Una base de conocimiento compartida con PDFs, imágenes, audios y videos cortos. Pregunta en el chat
+                        y la búsqueda semántica (EmbeddingGemma 2 en llama.cpp + pgvector) encuentra la respuesta
+                        en el texto, en las imágenes, en lo que se dice y en lo que se ve.
+                    </p>
+
+                    <!-- Embedded Video / Multimedia Interactive Demo Player -->
+                    <div class="video-demo-card">
+                        <div class="video-demo-header">
+                            <div class="video-demo-header-title">
+                                <i data-lucide="play-circle" style="color:var(--emerald-400);width:16px;height:16px;"></i>
+                                <span>Cómo funciona Archivo Vivo</span>
+                            </div>
+                            <span style="font-size:0.68rem;background:rgba(16,185,129,0.1);color:var(--emerald-400);padding:2px 8px;border-radius:10px;font-weight:600;">
+                                GUÍA INTERACTIVA
+                            </span>
+                        </div>
+                        <div class="video-demo-screen">
+                            <div class="video-demo-preview" id="video-demo-preview">
+                                <div class="video-play-btn" id="video-demo-play-btn" onclick="toggleDemoPlayback()" title="Reproducir demostración">
+                                    <i data-lucide="play" id="video-play-icon"></i>
+                                </div>
+                                <div style="margin-top:16px;text-align:center;">
+                                    <h4 style="font-size:0.95rem;font-weight:700;margin-bottom:4px;" id="demo-slide-title">
+                                        Ingesta multimodal y búsqueda semántica
+                                    </h4>
+                                    <p style="font-size:0.75rem;color:var(--zinc-400);max-width:480px;" id="demo-slide-desc">
+                                        Texto, imágenes, transcripciones y fotogramas se convierten en fragmentos con su página o su minuto y se vectorizan con EmbeddingGemma 2.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Video Controls Bar -->
+                        <div class="video-controls-bar">
+                            <button class="toolbar-btn" onclick="toggleDemoPlayback()" id="btn-demo-ctrl-play">
+                                <i data-lucide="play" style="width:14px;height:14px;"></i>
+                            </button>
+                            <div class="video-progress-track" onclick="seekDemoProgress(event)">
+                                <div class="video-progress-thumb" id="demo-progress-bar"></div>
+                            </div>
+                            <span class="video-time" id="demo-time-display">01:15 / 03:00</span>
+                            <button class="toolbar-btn" onclick="restartDemoPlayback()" title="Reiniciar">
+                                <i data-lucide="rotate-ccw" style="width:14px;height:14px;"></i>
+                            </button>
+                        </div>
+                        <!-- Interactive Tour Tabs -->
+                        <div class="video-tour-tabs">
+                            <div class="video-tour-tab active" onclick="selectDemoStep(0)">1. Ingesta multimodal</div>
+                            <div class="video-tour-tab" onclick="selectDemoStep(1)">2. EmbeddingGemma 2</div>
+                            <div class="video-tour-tab" onclick="selectDemoStep(2)">3. Consulta a toda la base</div>
+                        </div>
+                    </div>
+
+                    <!-- Welcome Feature Grid -->
+                    <div class="welcome-features">
+                        <div class="wf-card">
+                            <div class="wf-icon" style="background:rgba(16,185,129,0.1);"><i data-lucide="scan-text" style="color:var(--emerald-400);"></i></div>
+                            <h4>PDFs con imágenes</h4>
+                            <p>El texto por página y las imágenes descritas por qwen2.5vl (Ollama) quedan buscables.</p>
+                        </div>
+                        <div class="wf-card">
+                            <div class="wf-icon" style="background:rgba(99,102,241,0.1);"><i data-lucide="message-square-text" style="color:var(--indigo-400);"></i></div>
+                            <h4>Audios y videos</h4>
+                            <p>Transcripción con Whisper y fotogramas descritos: pregunta por lo que se dice y por lo que se ve.</p>
+                        </div>
+                        <div class="wf-card">
+                            <div class="wf-icon" style="background:rgba(245,158,11,0.1);"><i data-lucide="network" style="color:var(--amber-400);"></i></div>
+                            <h4>Consulta a toda la base</h4>
+                            <p>Una pregunta recorre todos los archivos; la respuesta cita archivo y página o minuto.</p>
+                        </div>
+                        <div class="wf-card">
+                            <div class="wf-icon" style="background:rgba(139,92,246,0.1);"><i data-lucide="shield-check" style="color:var(--violet-400);"></i></div>
+                            <h4>Embeddings locales</h4>
+                            <p>EmbeddingGemma 2 corre en tu PC con llama.cpp; los vectores viven en PostgreSQL + pgvector.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Document View (Dynamic Panels) -->
+            <div class="viewer-document" id="viewer-document">
+                <!-- TAB 0: Visor real del PDF (PDF.js) -->
+                <div id="vpanel-pdf" style="display:none;">
+                    <div class="mark-legend" id="mark-legend" hidden></div>
+                    <div class="pdf-stage" id="pdf-stage">
+                        <div class="pdf-status" id="pdf-status">Cargando documento...</div>
+                        <div class="pdf-sheet" id="pdf-sheet">
+                            <canvas id="pdf-canvas" style="display:none;"></canvas>
+                            <div class="mk-layer" id="pdf-marks"></div>
+                        </div>
+                    </div>
+                    <div class="media-stage" id="media-stage" style="display:none;">
+                        <div class="media-player" id="media-player"></div>
+                        <div class="media-marks" id="media-marks" hidden></div>
+                        <h4 class="media-transcript-title"><i data-lucide="captions"></i> <span id="media-notes-title">Transcripción y fotogramas</span> <small>· clic para saltar a ese momento</small></h4>
+                        <div class="media-transcript" id="media-transcript"></div>
+                    </div>
+                </div>
+                <div id="zoom-content-wrapper" style="transform-origin:top left;transition:transform 0.2s ease;">
+                    <!-- TAB 1: Cognitive Summary & Stats -->
+                    <div id="vpanel-summary">
+                        <!-- Stats Grid -->
+                        <div class="stats-grid" id="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon" style="background:rgba(16,185,129,0.1);">
+                                    <i data-lucide="file-text" style="color:var(--emerald-400);"></i>
+                                </div>
+                                <div class="stat-value" id="stat-pages">0</div>
+                                <div class="stat-label">Páginas</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon" style="background:rgba(99,102,241,0.1);">
+                                    <i data-lucide="puzzle" style="color:var(--indigo-400);"></i>
+                                </div>
+                                <div class="stat-value" id="stat-chunks">0</div>
+                                <div class="stat-label">Fragmentos</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon" style="background:rgba(245,158,11,0.1);">
+                                    <i data-lucide="hard-drive" style="color:var(--amber-400);"></i>
+                                </div>
+                                <div class="stat-value" id="stat-size">0</div>
+                                <div class="stat-label">KB</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon" style="background:rgba(139,92,246,0.1);">
+                                    <i data-lucide="gauge" style="color:var(--violet-400);"></i>
+                                </div>
+                                <div class="stat-value" id="stat-complexity">–</div>
+                                <div class="stat-label">Complejidad</div>
+                            </div>
+                        </div>
+
+                        <!-- Summary -->
+                        <div class="summary-card" id="summary-card">
+                            <h3><i data-lucide="sparkles"></i> Resumen Ejecutivo del Documento</h3>
+                            <p id="doc-summary">Cargando resumen...</p>
+                        </div>
+
+                        <!-- Key Concepts -->
+                        <div class="concepts-section" id="concepts-section">
+                            <h3><i data-lucide="tags"></i> Conceptos Clave Identificados</h3>
+                            <div class="concept-tags" id="concept-tags"></div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: Dynamic Mermaid Diagram Canvas -->
+                    <div id="vpanel-diagram" style="display:none;">
+                        <div class="summary-card">
+                            <h3><i data-lucide="network"></i> Mapa Cognitivo & Estructura Lógica</h3>
+                            <p style="font-size:0.75rem;color:var(--zinc-400);margin-bottom:16px;">
+                                Diagrama relacional generado automáticamente a partir de los conceptos y arquitectura del documento.
+                            </p>
+                            <div class="mermaid" id="doc-mermaid-diagram">
+                                graph TD
+                                    Doc["📄 Documento Activo"] --> Chunks["🧩 Fragmentos Semánticos"]
+                                    Chunks --> Vec["⚡ Embeddings MiniLM-L6"]
+                                    Vec --> PG["🗄️ PostgreSQL + pgvector"]
+                                    PG --> Context["🔍 Top-K Retrieval"]
+                                    Context --> Llama["🧠 Respuesta con Groq"]
+                                    Llama --> Answer["💬 Respuesta con Citas [Pág]"]
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: Chunks & Content Explorer -->
+                    <div id="vpanel-chunks" style="display:none;">
+                        <div class="summary-card">
+                            <h3><i data-lucide="layers"></i> Explorador de Fragmentos Semánticos</h3>
+                            <p style="font-size:0.75rem;color:var(--zinc-400);margin-bottom:16px;">
+                                Visualiza los fragmentos procesados con ventanas deslizantes de solapamiento para garantizar retención de contexto.
+                            </p>
+                            <div id="doc-chunks-list" style="display:flex;flex-direction:column;gap:10px;">
+                                <div style="padding:14px;background:var(--zinc-850);border:1px solid var(--zinc-800);border-radius:10px;font-size:0.8rem;color:var(--zinc-400);">
+                                    Selecciona un documento para explorar sus fragmentos indexados.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══════════ ADMIN CONTROL PANEL (MANAGEMENT CRUD) ══════════ -->
+            <div id="admin-panel-container" style="display:none; height:100%; overflow-y:auto; padding:28px 36px; background:var(--zinc-950);">
+                <!-- Admin Header -->
+                <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+                    <div>
+                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+                            <div style="width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg, var(--indigo-500), var(--violet-500)); display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(99,102,241,0.3);">
+                                <i data-lucide="shield-check" style="color:white; width:20px; height:20px;"></i>
+                            </div>
+                            <h2 style="font-size:1.45rem; font-weight:800; letter-spacing:-0.02em; color:var(--zinc-100);">
+                                Centro de Administración y Control
+                            </h2>
+                            <span style="background:rgba(99,102,241,0.2); border:1px solid rgba(99,102,241,0.4); color:var(--cyan-ink); font-size:0.7rem; font-weight:700; padding:3px 8px; border-radius:8px;">
+                                ROL ADMIN ACTIVO
+                            </span>
+                        </div>
+                        <p style="font-size:0.83rem; color:var(--zinc-400); max-width:650px;">
+                            Supervisa métricas de la base de datos SQLite, administra credenciales, roles y realiza operaciones CRUD sobre todos los usuarios registrados.
+                        </p>
+                    </div>
+
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <button onclick="loadAdminStats(); loadAdminUsers();" style="display:flex; align-items:center; gap:6px; background:var(--zinc-850); border:1px solid var(--zinc-750, #3f3f46); color:var(--zinc-300); padding:9px 14px; border-radius:10px; font-size:0.8rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='var(--zinc-800)'" onmouseout="this.style.background='var(--zinc-850)'">
+                            <i data-lucide="refresh-cw" style="width:15px; height:15px;"></i> Refrescar
+                        </button>
+                        <button onclick="openCreateUserModal()" style="display:flex; align-items:center; gap:6px; background:linear-gradient(135deg, var(--emerald-500), var(--emerald-600)); border:none; color:white; padding:9px 16px; border-radius:10px; font-size:0.8rem; font-weight:600; cursor:pointer; box-shadow:0 4px 14px rgba(16,185,129,0.3); transition:all 0.2s;" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
+                            <i data-lucide="user-plus" style="width:16px; height:16px;"></i> + Nuevo Usuario
+                        </button>
+                        <button onclick="toggleAdminPanel(false)" style="display:flex; align-items:center; gap:6px; background:transparent; border:1px solid var(--zinc-800); color:var(--zinc-400); padding:9px 14px; border-radius:10px; font-size:0.8rem; font-weight:500; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.color='var(--zinc-200)'; this.style.borderColor='var(--zinc-700)'" onmouseout="this.style.color='var(--zinc-400)'; this.style.borderColor='var(--zinc-800)'">
+                            <i data-lucide="arrow-left" style="width:15px; height:15px;"></i> Volver al Visor
+                        </button>
+                    </div>
+                </div>
+
+                <!-- KPI Metrics Cards -->
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:14px; margin-bottom:28px;">
+                    <div style="background:var(--zinc-900); border:1px solid var(--zinc-800); border-radius:14px; padding:18px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                            <span style="font-size:0.75rem; font-weight:600; color:var(--zinc-400); text-transform:uppercase; letter-spacing:0.04em;">Total Usuarios</span>
+                            <div style="width:30px; height:30px; border-radius:8px; background:rgba(99,102,241,0.12); display:flex; align-items:center; justify-content:center;">
+                                <i data-lucide="users" style="width:16px; height:16px; color:var(--indigo-400);"></i>
+                            </div>
+                        </div>
+                        <div id="stat-total-users" style="font-size:1.6rem; font-weight:800; color:var(--zinc-100);">-</div>
+                        <div style="font-size:0.7rem; color:var(--zinc-500); margin-top:2px;">Registrados en BD</div>
+                    </div>
+
+                    <div style="background:var(--zinc-900); border:1px solid var(--zinc-800); border-radius:14px; padding:18px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                            <span style="font-size:0.75rem; font-weight:600; color:var(--zinc-400); text-transform:uppercase; letter-spacing:0.04em;">Administradores</span>
+                            <div style="width:30px; height:30px; border-radius:8px; background:rgba(139,92,246,0.12); display:flex; align-items:center; justify-content:center;">
+                                <i data-lucide="shield" style="width:16px; height:16px; color:var(--violet-400);"></i>
+                            </div>
+                        </div>
+                        <div id="stat-admin-users" style="font-size:1.6rem; font-weight:800; color:var(--ink);">-</div>
+                        <div style="font-size:0.7rem; color:var(--zinc-500); margin-top:2px;">Con rol de control</div>
+                    </div>
+
+                    <div style="background:var(--zinc-900); border:1px solid var(--zinc-800); border-radius:14px; padding:18px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                            <span style="font-size:0.75rem; font-weight:600; color:var(--zinc-400); text-transform:uppercase; letter-spacing:0.04em;">Usuarios Normales</span>
+                            <div style="width:30px; height:30px; border-radius:8px; background:rgba(16,185,129,0.12); display:flex; align-items:center; justify-content:center;">
+                                <i data-lucide="user" style="width:16px; height:16px; color:var(--emerald-400);"></i>
+                            </div>
+                        </div>
+                        <div id="stat-regular-users" style="font-size:1.6rem; font-weight:800; color:var(--emerald-400);">-</div>
+                        <div style="font-size:0.7rem; color:var(--zinc-500); margin-top:2px;">Usuarios estándar</div>
+                    </div>
+
+                    <div style="background:var(--zinc-900); border:1px solid var(--zinc-800); border-radius:14px; padding:18px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                            <span style="font-size:0.75rem; font-weight:600; color:var(--zinc-400); text-transform:uppercase; letter-spacing:0.04em;">Documentos</span>
+                            <div style="width:30px; height:30px; border-radius:8px; background:rgba(6,182,212,0.12); display:flex; align-items:center; justify-content:center;">
+                                <i data-lucide="files" style="width:16px; height:16px; color:var(--cyan-400);"></i>
+                            </div>
+                        </div>
+                        <div id="stat-total-docs" style="font-size:1.6rem; font-weight:800; color:var(--zinc-100);">-</div>
+                        <div style="font-size:0.7rem; color:var(--zinc-500); margin-top:2px;">Indexados en PostgreSQL + pgvector</div>
+                    </div>
+
+                    <div style="background:var(--zinc-900); border:1px solid var(--zinc-800); border-radius:14px; padding:18px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                            <span style="font-size:0.75rem; font-weight:600; color:var(--zinc-400); text-transform:uppercase; letter-spacing:0.04em;">Consultas IA</span>
+                            <div style="width:30px; height:30px; border-radius:8px; background:rgba(245,158,11,0.12); display:flex; align-items:center; justify-content:center;">
+                                <i data-lucide="message-square" style="width:16px; height:16px; color:var(--amber-400);"></i>
+                            </div>
+                        </div>
+                        <div id="stat-total-msgs" style="font-size:1.6rem; font-weight:800; color:var(--zinc-100);">-</div>
+                        <div style="font-size:0.7rem; color:var(--zinc-500); margin-top:2px;">Interacciones RAG</div>
+                    </div>
+
+                    <div style="background:var(--zinc-900); border:1px solid var(--zinc-800); border-radius:14px; padding:18px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                            <span style="font-size:0.75rem; font-weight:600; color:var(--zinc-400); text-transform:uppercase; letter-spacing:0.04em;">Almacenamiento</span>
+                            <div style="width:30px; height:30px; border-radius:8px; background:rgba(236,72,153,0.12); display:flex; align-items:center; justify-content:center;">
+                                <i data-lucide="hard-drive" style="width:16px; height:16px; color:var(--mag-ink);"></i>
+                            </div>
+                        </div>
+                        <div id="stat-total-storage" style="font-size:1.6rem; font-weight:800; color:var(--zinc-100);">-</div>
+                        <div style="font-size:0.7rem; color:var(--zinc-500); margin-top:2px;">Archivos en la base</div>
+                    </div>
+                </div>
+
+                <!-- Directory Table Container -->
+                <div style="background:var(--zinc-900); border:1px solid var(--zinc-800); border-radius:18px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.3);">
+                    <!-- Table Toolbar -->
+                    <div style="padding:18px 24px; border-bottom:1px solid var(--zinc-800); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <h3 style="font-size:1.05rem; font-weight:700; color:var(--zinc-100);">Directorio de Usuarios</h3>
+                            <span id="admin-users-count-badge" style="font-size:0.72rem; background:var(--zinc-800); color:var(--zinc-400); padding:2px 8px; border-radius:6px; font-weight:600;">
+                                0 usuarios
+                            </span>
+                        </div>
+
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <!-- Search -->
+                            <div style="position:relative; width:260px;">
+                                <input type="text" id="admin-search-input" placeholder="Buscar por nombre, user o email..." oninput="loadAdminUsers()" style="width:100%; background:var(--zinc-850); border:1px solid var(--zinc-700); border-radius:8px; padding:7px 12px 7px 32px; font-size:0.8rem; color:var(--zinc-100); outline:none; font-family:inherit;">
+                                <i data-lucide="search" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:var(--zinc-500); pointer-events:none;"></i>
+                            </div>
+
+                            <!-- Role filter -->
+                            <select id="admin-role-filter" onchange="loadAdminUsers()" style="background:var(--zinc-850); border:1px solid var(--zinc-700); border-radius:8px; padding:7px 12px; font-size:0.8rem; color:var(--zinc-200); outline:none; font-family:inherit;">
+                                <option value="all">Todos los roles</option>
+                                <option value="admin">Solo Administradores</option>
+                                <option value="user">Solo Usuarios Normales</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Table -->
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%; border-collapse:collapse; text-align:left;">
+                            <thead>
+                                <tr style="background:var(--zinc-850); border-bottom:1px solid var(--zinc-800); font-size:0.72rem; color:var(--zinc-400); text-transform:uppercase; letter-spacing:0.05em;">
+                                    <th style="padding:12px 16px;">Usuario</th>
+                                    <th style="padding:12px 16px;">Contacto & Estado</th>
+                                    <th style="padding:12px 16px;">Rol Asignado</th>
+                                    <th style="padding:12px 16px;">Actividad (Docs / Chats)</th>
+                                    <th style="padding:12px 16px;">Fecha Registro</th>
+                                    <th style="padding:12px 16px; text-align:right;">Acciones CRUD</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-users-table-body">
+                                <!-- Populated dynamically by admin.js -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- ══════════ PANEL 3: CHAT ══════════ -->
+        <aside class="chat-panel" id="chat-panel">
+            <!-- Chat Header -->
+            <div class="chat-header">
+                <div class="chat-header-icon">
+                    <i data-lucide="brain"></i>
+                </div>
+                <div class="chat-header-info">
+                    <h3 id="chat-title">Consulta a toda la base</h3>
+                    <p id="chat-status">Cargando la base de conocimiento...</p>
+                </div>
+                <button class="chat-clear-btn" onclick="clearChatHistory()" title="Limpiar historial" id="btn-clear-chat" style="display:none;">
+                    <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
+                </button>
+            </div>
+
+            <!-- Modo de consulta -->
+            <div class="chat-mode" role="tablist">
+                <button id="mode-kb" class="active" onclick="setChatMode('kb')"><i data-lucide="library"></i> Toda la base</button>
+                <button id="mode-doc" onclick="setChatMode('doc')" disabled><i data-lucide="file-search"></i> Este archivo</button>
+            </div>
+
+            <!-- Chat Messages / Empty State -->
+            <div class="chat-messages" id="chat-messages">
+                <div class="chat-empty" id="chat-empty">
+                    <div class="chat-empty-icon">
+                        <i data-lucide="message-circle-question"></i>
+                    </div>
+                    <h4>Comienza una conversación</h4>
+                    <p>Pregunta a toda la base de conocimiento o abre un archivo para preguntarle solo a él.</p>
+                </div>
+            </div>
+
+            <!-- Suggestion Chips -->
+            <div class="suggestion-chips" id="suggestion-chips" style="display:none;"></div>
+
+            <!-- Chat Input -->
+            <div class="chat-input-area">
+                <div class="chat-input-wrapper">
+                    <textarea
+                        id="chat-input"
+                        placeholder="Pregunta algo a la base de conocimiento..."
+                        rows="1"
+                        disabled
+                        onkeydown="handleChatKeydown(event)"
+                        oninput="autoResize(this)"
+                    ></textarea>
+                    <button class="btn-send" id="btn-send" onclick="sendMessage()" disabled>
+                        <i data-lucide="send"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Mobile Navigation -->
+    <div class="mobile-nav">
+        <button onclick="toggleSidebar()">
+            <i data-lucide="panel-left"></i> Base
+        </button>
+        <button onclick="closeMobilePanels()">
+            <i data-lucide="layout-dashboard"></i> Visor
+        </button>
+        <button onclick="toggleChat()">
+            <i data-lucide="message-square"></i> Chat
+        </button>
+    </div>
+
+    <!-- ══════════ ADMIN MODALS ══════════ -->
+    <!-- Create / Edit User Modal -->
+    <div id="admin-user-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); z-index:300; align-items:center; justify-content:center; padding:20px;">
+        <div style="background:var(--zinc-900); border:1px solid var(--zinc-800); border-radius:20px; width:100%; max-width:520px; overflow:hidden; box-shadow:0 25px 60px rgba(0,0,0,0.6); animation:slideDown 0.3s ease;">
+            <!-- Modal Header -->
+            <div style="padding:22px 24px 18px; border-bottom:1px solid var(--zinc-800); display:flex; align-items:flex-start; justify-content:space-between;">
+                <div>
+                    <h3 id="modal-user-title" style="font-size:1.2rem; font-weight:700; color:var(--zinc-100); margin-bottom:4px;">
+                        Crear Nuevo Usuario
+                    </h3>
+                    <p id="modal-user-subtitle" style="font-size:0.78rem; color:var(--zinc-400);">
+                        Asigna credenciales y rol en la base de datos.
+                    </p>
+                </div>
+                <button type="button" onclick="closeAdminUserModal()" style="background:none; border:none; color:var(--zinc-400); cursor:pointer; padding:4px; border-radius:6px;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--zinc-400)'">
+                    <i data-lucide="x" style="width:20px;height:20px;"></i>
+                </button>
+            </div>
+
+            <!-- Error Banner -->
+            <div id="modal-user-error" style="display:none; margin:16px 24px 0; padding:10px 14px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); border-radius:10px; color:var(--red-400); font-size:0.78rem;">
+            </div>
+
+            <!-- Modal Form -->
+            <form onsubmit="handleAdminUserForm(event)" style="padding:20px 24px 24px;">
+                <div style="margin-bottom:14px;">
+                    <label style="display:block; font-size:0.75rem; font-weight:600; color:var(--zinc-300); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">Nombre Completo</label>
+                    <input type="text" id="modal-fullname" placeholder="Ej. Juan Pérez" style="width:100%; background:var(--zinc-850); border:1px solid var(--zinc-700); border-radius:10px; padding:10px 14px; font-size:0.85rem; color:var(--zinc-100); outline:none;">
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+                    <div>
+                        <label style="display:block; font-size:0.75rem; font-weight:600; color:var(--zinc-300); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">Usuario *</label>
+                        <input type="text" id="modal-username" placeholder="juanperez" required minlength="3" style="width:100%; background:var(--zinc-850); border:1px solid var(--zinc-700); border-radius:10px; padding:10px 14px; font-size:0.85rem; color:var(--zinc-100); outline:none;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.75rem; font-weight:600; color:var(--zinc-300); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">Rol del Sistema *</label>
+                        <select id="modal-role" style="width:100%; background:var(--zinc-850); border:1px solid var(--zinc-700); border-radius:10px; padding:10px 14px; font-size:0.85rem; color:var(--zinc-100); outline:none;">
+                            <option value="user">Usuario Estándar</option>
+                            <option value="admin">Administrador Maestro</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="margin-bottom:14px;">
+                    <label style="display:block; font-size:0.75rem; font-weight:600; color:var(--zinc-300); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">Correo Electrónico *</label>
+                    <input type="email" id="modal-email" placeholder="juan@ejemplo.com" required style="width:100%; background:var(--zinc-850); border:1px solid var(--zinc-700); border-radius:10px; padding:10px 14px; font-size:0.85rem; color:var(--zinc-100); outline:none;">
+                </div>
+
+                <div style="margin-bottom:14px;">
+                    <label style="display:block; font-size:0.75rem; font-weight:600; color:var(--zinc-300); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">Contraseña</label>
+                    <input type="password" id="modal-password" placeholder="••••••••" style="width:100%; background:var(--zinc-850); border:1px solid var(--zinc-700); border-radius:10px; padding:10px 14px; font-size:0.85rem; color:var(--zinc-100); outline:none;">
+                    <span id="modal-password-hint" style="display:block; font-size:0.7rem; color:var(--zinc-500); margin-top:4px;">
+                        Mínimo 6 caracteres
+                    </span>
+                </div>
+
+                <div id="modal-status-group" style="display:none; margin-bottom:18px;">
+                    <label style="display:block; font-size:0.75rem; font-weight:600; color:var(--zinc-300); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">Estado de Cuenta</label>
+                    <select id="modal-status" style="width:100%; background:var(--zinc-850); border:1px solid var(--zinc-700); border-radius:10px; padding:10px 14px; font-size:0.85rem; color:var(--zinc-100); outline:none;">
+                        <option value="1">Activo (Permite inicio de sesión)</option>
+                        <option value="0">Desactivado (Bloquear acceso)</option>
+                    </select>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+                    <button type="button" onclick="closeAdminUserModal()" style="padding:10px 16px; background:var(--zinc-800); border:1px solid var(--zinc-700); border-radius:10px; color:var(--zinc-300); font-size:0.82rem; font-weight:600; cursor:pointer;">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="btn-save-admin-user" style="padding:10px 20px; background:linear-gradient(135deg, var(--emerald-500), var(--emerald-600)); border:none; border-radius:10px; color:white; font-size:0.82rem; font-weight:600; cursor:pointer; box-shadow:0 4px 14px rgba(16,185,129,0.3);">
+                        Guardar Usuario
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="admin-delete-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); z-index:310; align-items:center; justify-content:center; padding:20px;">
+        <div style="background:var(--zinc-900); border:1px solid var(--zinc-800); border-radius:20px; width:100%; max-width:440px; padding:28px; text-align:center; box-shadow:0 25px 60px rgba(0,0,0,0.6); animation:slideDown 0.3s ease;">
+            <div style="width:54px; height:54px; border-radius:16px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.25); display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
+                <i data-lucide="alert-triangle" style="width:26px; height:26px; color:var(--red-400);"></i>
+            </div>
+            <h3 style="font-size:1.15rem; font-weight:700; color:var(--zinc-100); margin-bottom:8px;">
+                ¿Eliminar permanentemente?
+            </h3>
+            <p style="font-size:0.8rem; color:var(--zinc-400); line-height:1.6; margin-bottom:24px;">
+                Se eliminará el usuario <span id="delete-modal-username" style="color:var(--zinc-200); font-weight:700;"></span> y todos los archivos que subió a la base (vectores en PostgreSQL + pgvector) y sus mensajes del chat. Esta acción no se puede deshacer.
+            </p>
+            <div style="display:flex; justify-content:center; gap:12px;">
+                <button type="button" onclick="closeDeleteUserModal()" style="padding:10px 18px; background:var(--zinc-800); border:1px solid var(--zinc-700); border-radius:10px; color:var(--zinc-300); font-size:0.82rem; font-weight:600; cursor:pointer;">
+                    Cancelar
+                </button>
+                <button type="button" id="btn-confirm-delete" onclick="executeDeleteUser()" style="padding:10px 20px; background:linear-gradient(135deg, var(--red-500), #dc2626); border:none; border-radius:10px; color:white; font-size:0.82rem; font-weight:600; cursor:pointer; box-shadow:0 4px 14px rgba(239,68,68,0.35);">
+                    Eliminar permanentemente
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/admin.js"></script>
+    <script src="assets/js/app.js"></script>
+    <script>
+        lucide.createIcons();
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: 'base',
+            themeVariables: {
+                darkMode: false,
+                background: '#F6F7F2',
+                fontFamily: 'Spectral, Georgia, serif',
+                primaryColor: '#FFE500',
+                primaryTextColor: '#1B1D52',
+                primaryBorderColor: '#1B1D52',
+                lineColor: '#E5007D',
+                secondaryColor: '#CDEFFC',
+                tertiaryColor: '#F6F7F2',
+            },
+        });
+    </script>
+</body>
+</html>

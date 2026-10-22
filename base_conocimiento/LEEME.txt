@@ -1,0 +1,12 @@
+BASE DE CONOCIMIENTO DE ARCHIVO VIVO
+====================================
+Todo lo que esté en esta carpeta se puede consultar desde la app.
+
+  pdf/      PDFs (máximo 10 hojas; pueden tener imágenes)
+  imagenes/ fotos, afiches, menús, capturas: jpg, png, webp…
+  audio/    audios cortos: mp3, wav, m4a, ogg, flac… (máximo 20 minutos)
+  video/    videos cortos: mp4, mov, webm, mkv… (máximo 20 minutos)
+  subidos/  lo que se sube desde la página web
+
+Para agregar archivos: cópialos aquí (en cualquier subcarpeta) y en la app
+pulsa "Indexar carpeta". Si borras o cambias un archivo, vuelve a pulsarlo.
